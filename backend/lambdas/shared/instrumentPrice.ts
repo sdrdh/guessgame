@@ -105,3 +105,30 @@ export async function getPriceAfter(startTime: number, instrument: string = 'BTC
     return null;
   }
 }
+
+export async function findDifferentPriceAfter(
+  startTime: number,
+  referencePrice: number,
+  instrument: string = 'BTCUSD'
+): Promise<number | null> {
+  try {
+    const result = await docClient.send(new QueryCommand({
+      TableName: TABLE_NAME,
+      KeyConditionExpression: 'PK = :pk AND SK > :sk',
+      FilterExpression: 'price <> :refPrice',
+      ExpressionAttributeValues: {
+        ':pk': `INSTRUMENT#${instrument}`,
+        ':sk': `TIMESTAMP#${startTime}`,
+        ':refPrice': referencePrice
+      },
+      ScanIndexForward: true,
+      Limit: 1
+    }));
+
+    if (!result.Items || result.Items.length === 0) return null;
+    return result.Items[0].price;
+  } catch (error) {
+    console.error('Error finding different price after timestamp:', error);
+    return null;
+  }
+}

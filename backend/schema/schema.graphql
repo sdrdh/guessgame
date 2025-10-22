@@ -1,0 +1,71 @@
+type User {
+  userId: ID!
+  email: String!
+  score: Int!
+  activeGuess: Guess
+  createdAt: AWSTimestamp!
+  updatedAt: AWSTimestamp!
+}
+
+type Guess {
+  guessId: ID!
+  direction: Direction!
+  startPrice: Float!
+  startTime: AWSTimestamp!
+  resolved: Boolean!
+  endPrice: Float
+  correct: Boolean
+  scoreChange: Int
+  resolvedAt: AWSTimestamp
+}
+
+type Price {
+  instrument: String!
+  price: Float!
+  timestamp: AWSTimestamp!
+}
+
+enum Direction {
+  up
+  down
+}
+
+type Query {
+  getUser: User @aws_cognito_user_pools
+  getGuessHistory(limit: Int): [Guess] @aws_cognito_user_pools
+}
+
+type Mutation {
+  createGuess(direction: Direction!): Guess @aws_cognito_user_pools
+
+  # Internal mutations (called by streamProcessor)
+  updateGuessStatus(userId: ID!, guess: GuessInput!): Guess @aws_api_key
+  updatePrice(instrument: String!, price: Float!, timestamp: AWSTimestamp!): Price @aws_api_key
+}
+
+type Subscription {
+  onGuessUpdated(userId: ID!): Guess
+    @aws_subscribe(mutations: ["updateGuessStatus"])
+    @aws_cognito_user_pools
+
+  onPriceUpdated(instrument: String!): Price
+    @aws_subscribe(mutations: ["updatePrice"])
+}
+
+input GuessInput {
+  guessId: ID!
+  direction: Direction!
+  startPrice: Float!
+  startTime: AWSTimestamp!
+  resolved: Boolean!
+  endPrice: Float
+  correct: Boolean
+  scoreChange: Int
+  resolvedAt: AWSTimestamp
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}
