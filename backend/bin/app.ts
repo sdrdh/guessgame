@@ -34,7 +34,8 @@ const apiStack = new ApiStack(app, 'GuessGameApiStack', {
   env,
   userPool: authStack.userPool,
   createGuessFunction: computeStack.createGuessFunction,
-  getUserFunction: computeStack.getUserFunction
+  getUserFunction: computeStack.getUserFunction,
+  getGuessHistoryFunction: computeStack.getGuessHistoryFunction
 });
 apiStack.addDependency(authStack);
 apiStack.addDependency(computeStack);

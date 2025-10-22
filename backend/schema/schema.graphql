@@ -7,8 +7,9 @@ type User {
   updatedAt: AWSTimestamp!
 }
 
-type Guess {
+type Guess @aws_api_key @aws_cognito_user_pools {
   guessId: ID!
+  userId: ID!
   direction: Direction!
   startPrice: Float!
   startTime: AWSTimestamp!
@@ -19,7 +20,7 @@ type Guess {
   resolvedAt: AWSTimestamp
 }
 
-type Price {
+type Price @aws_api_key @aws_cognito_user_pools {
   instrument: String!
   price: Float!
   timestamp: AWSTimestamp!
@@ -46,14 +47,18 @@ type Mutation {
 type Subscription {
   onGuessUpdated(userId: ID!): Guess
     @aws_subscribe(mutations: ["updateGuessStatus"])
+    @aws_api_key
     @aws_cognito_user_pools
 
   onPriceUpdated(instrument: String!): Price
     @aws_subscribe(mutations: ["updatePrice"])
+    @aws_api_key
+    @aws_cognito_user_pools
 }
 
 input GuessInput {
   guessId: ID!
+  userId: ID!
   direction: Direction!
   startPrice: Float!
   startTime: AWSTimestamp!

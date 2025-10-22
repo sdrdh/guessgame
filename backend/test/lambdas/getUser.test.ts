@@ -46,8 +46,8 @@ describe('getUser Lambda', () => {
       userId: 'user-123',
       email: 'test@example.com',
       score: 10,
-      createdAt: '2024-01-01',
-      updatedAt: '2024-01-01'
+      createdAt: 1704067200,
+      updatedAt: 1704067200
     };
 
     const mockGuess = {
@@ -81,8 +81,8 @@ describe('getUser Lambda', () => {
       userId: 'user-123',
       email: 'test@example.com',
       score: 10,
-      createdAt: '2024-01-01',
-      updatedAt: '2024-01-01'
+      createdAt: 1704067200,
+      updatedAt: 1704067200
     };
 
     mockGetUser.mockResolvedValue(mockUser);

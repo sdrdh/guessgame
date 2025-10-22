@@ -14,6 +14,7 @@ interface CreateGuessInput {
 
 interface Guess {
   guessId: string;
+  userId: string;
   direction: 'up' | 'down';
   startPrice: number;
   startTime: number;
@@ -64,6 +65,7 @@ export const handler = async (event: AppSyncResolverEvent<CreateGuessInput>): Pr
     // Create guess object
     const guess: Guess = {
       guessId: randomUUID(),
+      userId,
       direction,
       startPrice: currentPrice,
       startTime: Date.now(),

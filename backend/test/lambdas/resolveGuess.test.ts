@@ -72,7 +72,7 @@ describe('resolveGuess Lambda', () => {
 
       expect(mockFindDifferentPriceAfter).toHaveBeenCalled();
       expect(mockUpdateUserScore).toHaveBeenCalledWith('user-123', 1);
-      expect(mockResolveGuess).toHaveBeenCalledWith('user-123', 46000, true, 1);
+      expect(mockResolveGuess).toHaveBeenCalledWith('user-123', expect.any(Number), 46000, true, 1);
     });
 
     it('should resolve correctly with UP guess and price decrease', async () => {
@@ -94,7 +94,7 @@ describe('resolveGuess Lambda', () => {
       await handler(event);
 
       expect(mockUpdateUserScore).toHaveBeenCalledWith('user-456', -1);
-      expect(mockResolveGuess).toHaveBeenCalledWith('user-456', 44000, false, -1);
+      expect(mockResolveGuess).toHaveBeenCalledWith('user-456', expect.any(Number), 44000, false, -1);
     });
 
     it('should resolve correctly with DOWN guess and price decrease', async () => {
@@ -116,7 +116,7 @@ describe('resolveGuess Lambda', () => {
       await handler(event);
 
       expect(mockUpdateUserScore).toHaveBeenCalledWith('user-789', 1);
-      expect(mockResolveGuess).toHaveBeenCalledWith('user-789', 44000, true, 1);
+      expect(mockResolveGuess).toHaveBeenCalledWith('user-789', expect.any(Number), 44000, true, 1);
     });
 
     it('should resolve correctly with DOWN guess and price increase', async () => {
@@ -138,7 +138,7 @@ describe('resolveGuess Lambda', () => {
       await handler(event);
 
       expect(mockUpdateUserScore).toHaveBeenCalledWith('user-321', -1);
-      expect(mockResolveGuess).toHaveBeenCalledWith('user-321', 46000, false, -1);
+      expect(mockResolveGuess).toHaveBeenCalledWith('user-321', expect.any(Number), 46000, false, -1);
     });
   });
 
@@ -219,7 +219,7 @@ describe('resolveGuess Lambda', () => {
       await handler(event);
 
       expect(mockUpdateUserScore).toHaveBeenCalledWith('user-123', -1);
-      expect(mockResolveGuess).toHaveBeenCalledWith('user-123', 45000, false, -1);
+      expect(mockResolveGuess).toHaveBeenCalledWith('user-123', expect.any(Number), 45000, false, -1);
     });
   });
 
@@ -245,7 +245,7 @@ describe('resolveGuess Lambda', () => {
 
       expect(mockGetCurrentInstrumentPrice).toHaveBeenCalledWith('BTCUSD');
       expect(mockUpdateUserScore).toHaveBeenCalledWith('user-999', 1);
-      expect(mockResolveGuess).toHaveBeenCalledWith('user-999', 46500, true, 1);
+      expect(mockResolveGuess).toHaveBeenCalledWith('user-999', expect.any(Number), 46500, true, 1);
     });
   });
 
@@ -269,7 +269,7 @@ describe('resolveGuess Lambda', () => {
       await handler(event);
 
       expect(mockUpdateUserScore).toHaveBeenCalledWith('user-111', 1);
-      expect(mockResolveGuess).toHaveBeenCalledWith('user-111', 45000.01, true, 1);
+      expect(mockResolveGuess).toHaveBeenCalledWith('user-111', expect.any(Number), 45000.01, true, 1);
     });
 
     it('should handle large price changes', async () => {
@@ -291,7 +291,7 @@ describe('resolveGuess Lambda', () => {
       await handler(event);
 
       expect(mockUpdateUserScore).toHaveBeenCalledWith('user-222', 1);
-      expect(mockResolveGuess).toHaveBeenCalledWith('user-222', 35000, true, 1);
+      expect(mockResolveGuess).toHaveBeenCalledWith('user-222', expect.any(Number), 35000, true, 1);
     });
 
     it('should handle retry count starting from non-zero', async () => {

@@ -88,7 +88,7 @@ export const handler = async (event: SQSEvent): Promise<void> => {
 
     // Update user score and resolve guess
     await updateUserScore(userId, scoreChange);
-    await resolveGuess(userId, endPrice, correct, scoreChange);
+    await resolveGuess(userId, startTime, endPrice, correct, scoreChange);
 
     console.log(`Guess ${guessId} resolved successfully`);
   } catch (error) {

@@ -1,29 +1,46 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
+	import { authStore } from '$lib/stores/auth.svelte';
 
-	let email = '';
-	let password = '';
-	let isSignUp = false;
-	let error = '';
-	let loading = false;
+	let email = $state('');
+	let password = $state('');
+	let isSignUp = $state(false);
+	let error = $state('');
+	let loading = $state(false);
 
-	async function handleSubmit() {
+	onMount(() => {
+		// If already authenticated, redirect to home
+		if (authStore.isAuthenticated) {
+			goto('/');
+		}
+	});
+
+	async function handleSubmit(event: SubmitEvent) {
+		event.preventDefault();
 		error = '';
 		loading = true;
 
 		try {
+			let result;
 			if (isSignUp) {
-				console.log('Sign up:', email);
-				// Will integrate with Cognito later
+				result = await authStore.register(email, password);
 			} else {
-				console.log('Login:', email);
-				// Will integrate with Cognito later
+				result = await authStore.login(email, password);
 			}
 
-			// Dummy navigation
-			await goto('/');
+			if (result.success) {
+				await goto('/');
+			} else if ('requiresConfirmation' in result && result.requiresConfirmation) {
+				error = 'Please check your email to confirm your account, then sign in.';
+				isSignUp = false;
+			} else if ('error' in result && result.error) {
+				error = result.error;
+			} else {
+				error = 'Authentication failed';
+			}
 		} catch (err: any) {
-			error = err.message;
+			error = err.message || 'An error occurred';
 		} finally {
 			loading = false;
 		}
@@ -41,7 +58,7 @@
 					</p>
 				</div>
 
-				<form on:submit|preventDefault={handleSubmit} class="space-y-4">
+				<form onsubmit={handleSubmit} class="space-y-4">
 					<div class="form-control">
 						<label for="email" class="label">
 							<span class="label-text">Email</span>
@@ -90,7 +107,7 @@
 				<div class="text-center">
 					<button
 						type="button"
-						on:click={() => isSignUp = !isSignUp}
+						onclick={() => isSignUp = !isSignUp}
 						class="link link-primary"
 					>
 						{isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}

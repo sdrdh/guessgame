@@ -16,6 +16,7 @@ export class ComputeStack extends cdk.Stack {
   public readonly createGuessFunction: lambdaNodejs.NodejsFunction;
   public readonly resolveGuessFunction: lambdaNodejs.NodejsFunction;
   public readonly getUserFunction: lambdaNodejs.NodejsFunction;
+  public readonly getGuessHistoryFunction: lambdaNodejs.NodejsFunction;
 
   constructor(scope: Construct, id: string, props: ComputeStackProps) {
     super(scope, id, props);
@@ -92,6 +93,18 @@ export class ComputeStack extends cdk.Stack {
 
     // Grant permissions
     table.grantReadData(this.getUserFunction);
+
+    // GetGuessHistory Lambda
+    this.getGuessHistoryFunction = new lambdaNodejs.NodejsFunction(this, 'GetGuessHistoryFunction', {
+      ...commonProps,
+      functionName: 'guess-game-get-guess-history',
+      entry: path.join(__dirname, '../../lambdas/getGuessHistory/index.ts'),
+      handler: 'handler',
+      environment: commonEnv
+    });
+
+    // Grant permissions
+    table.grantReadData(this.getGuessHistoryFunction);
 
     // Outputs
     new cdk.CfnOutput(this, 'CreateGuessFunctionArn', {

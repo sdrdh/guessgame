@@ -9,6 +9,7 @@ interface ApiStackProps extends cdk.StackProps {
   userPool: cognito.UserPool;
   createGuessFunction: lambda.Function;
   getUserFunction: lambda.Function;
+  getGuessHistoryFunction: lambda.Function;
 }
 
 export class ApiStack extends cdk.Stack {
@@ -18,7 +19,7 @@ export class ApiStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
 
-    const { userPool, createGuessFunction, getUserFunction } = props;
+    const { userPool, createGuessFunction, getUserFunction, getGuessHistoryFunction } = props;
 
     // Create AppSync API
     this.api = new appsync.GraphqlApi(this, 'GuessGameApi', {
@@ -59,10 +60,20 @@ export class ApiStack extends cdk.Stack {
       getUserFunction
     );
 
+    const getGuessHistoryDataSource = this.api.addLambdaDataSource(
+      'GetGuessHistoryDataSource',
+      getGuessHistoryFunction
+    );
+
     // Create resolvers for queries
     getUserDataSource.createResolver('GetUserResolver', {
       typeName: 'Query',
       fieldName: 'getUser'
+    });
+
+    getGuessHistoryDataSource.createResolver('GetGuessHistoryResolver', {
+      typeName: 'Query',
+      fieldName: 'getGuessHistory'
     });
 
     // Create resolvers for mutations
@@ -88,6 +99,7 @@ export class ApiStack extends cdk.Stack {
         #set($guess = $context.arguments.guess)
         {
           "guessId": "$guess.guessId",
+          "userId": "$guess.userId",
           "direction": "$guess.direction",
           "startPrice": $guess.startPrice,
           "startTime": $guess.startTime,

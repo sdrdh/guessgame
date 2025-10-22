@@ -37,8 +37,8 @@ describe('createGuess Lambda', () => {
         userId: 'user-123',
         email: 'test@example.com',
         score: 0,
-        createdAt: '2024-01-01',
-        updatedAt: '2024-01-01'
+        createdAt: 1704067200,
+        updatedAt: 1704067200
       });
       mockGetActiveGuess.mockResolvedValue(null);
       mockGetCurrentInstrumentPrice.mockResolvedValue(45000);
@@ -77,8 +77,8 @@ describe('createGuess Lambda', () => {
         userId: 'user-123',
         email: 'test@example.com',
         score: 0,
-        createdAt: '2024-01-01',
-        updatedAt: '2024-01-01'
+        createdAt: 1704067200,
+        updatedAt: 1704067200
       });
       mockGetActiveGuess.mockResolvedValue(null);
       mockGetCurrentInstrumentPrice.mockRejectedValue(new Error('CoinGecko API error'));

@@ -48,7 +48,14 @@ export class AuthStack extends cdk.Stack {
       generateSecret: false,
       refreshTokenValidity: cdk.Duration.days(30),
       accessTokenValidity: cdk.Duration.hours(1),
-      idTokenValidity: cdk.Duration.hours(1)
+      idTokenValidity: cdk.Duration.hours(1),
+      readAttributes: new cognito.ClientAttributes().withStandardAttributes({
+        email: true,
+        emailVerified: true
+      }),
+      writeAttributes: new cognito.ClientAttributes().withStandardAttributes({
+        email: true
+      })
     });
 
     // Outputs

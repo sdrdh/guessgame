@@ -9,6 +9,7 @@ const UPDATE_GUESS_STATUS_MUTATION = `
   mutation UpdateGuessStatus($userId: ID!, $guess: GuessInput!) {
     updateGuessStatus(userId: $userId, guess: $guess) {
       guessId
+      userId
       direction
       startPrice
       startTime
@@ -33,6 +34,7 @@ const UPDATE_PRICE_MUTATION = `
 
 interface Guess {
   guessId: string;
+  userId: string;
   direction: 'up' | 'down';
   startPrice: number;
   startTime: number;
@@ -56,8 +58,8 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
 
       const item = unmarshall(newImage as Record<string, AttributeValue>);
 
-      // Handle resolved guess updates
-      if (item.SK === 'GUESS#ACTIVE' && item.resolved && record.eventName === 'MODIFY') {
+      // Handle resolved guess updates (SK starts with GUESS# and is resolved)
+      if (item.SK?.startsWith('GUESS#') && item.resolved && record.eventName === 'MODIFY') {
         await handleGuessResolution(item);
       }
 
@@ -78,6 +80,7 @@ async function handleGuessResolution(item: any): Promise<void> {
 
   const guess: Guess = {
     guessId: item.guessId,
+    userId: item.userId || userId,
     direction: item.direction,
     startPrice: item.startPrice,
     startTime: item.startTime,
@@ -94,6 +97,7 @@ async function handleGuessResolution(item: any): Promise<void> {
     userId,
     guess: {
       guessId: guess.guessId,
+      userId: userId,
       direction: guess.direction,
       startPrice: guess.startPrice,
       startTime: guess.startTime,
@@ -105,8 +109,9 @@ async function handleGuessResolution(item: any): Promise<void> {
     }
   };
 
-  await callAppSync(UPDATE_GUESS_STATUS_MUTATION, variables);
+  const result = await callAppSync(UPDATE_GUESS_STATUS_MUTATION, variables);
   console.log('Successfully published guess resolution to AppSync');
+  console.log('AppSync mutation result:', JSON.stringify(result, null, 2));
 }
 
 async function handlePriceUpdate(item: any): Promise<void> {
@@ -127,7 +132,7 @@ async function handlePriceUpdate(item: any): Promise<void> {
   console.log('Successfully published price update to AppSync');
 }
 
-async function callAppSync(query: string, variables: any): Promise<void> {
+async function callAppSync(query: string, variables: any): Promise<any> {
   const body = JSON.stringify({ query, variables });
 
   console.log('Calling AppSync with:', body);
@@ -153,4 +158,5 @@ async function callAppSync(query: string, variables: any): Promise<void> {
   }
 
   console.log('AppSync response:', JSON.stringify(result));
+  return result;
 }
