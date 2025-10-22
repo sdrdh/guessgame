@@ -1,0 +1,33 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "cdk": "cdk",
+    "deploy": "cdk deploy --all",
+    "synth": "cdk synth",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@aws-cdk/aws-appsync-alpha": "^2.59.0-alpha.0",
+    "@aws-sdk/client-dynamodb": "^3.914.0",
+    "@aws-sdk/client-sqs": "^3.914.0",
+    "@aws-sdk/lib-dynamodb": "^3.914.0",
+    "aws-cdk-lib": "^2.220.0",
+    "constructs": "^10.4.2"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.156",
+    "@types/node": "^24.9.1",
+    "aws-cdk": "^2.1030.0",
+    "esbuild": "^0.25.11",
+    "typescript": "^5.9.3"
+  }
+}

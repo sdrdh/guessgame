@@ -1,0 +1,48 @@
+# Claude analysis folder (local only)
+.claude/
+
+# Status tracking (local only)
+STATUS.md
+PLAN.md
+
+# Dependencies
+node_modules/
+.npm/
+
+# Build outputs
+dist/
+build/
+.svelte-kit/
+cdk.out/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage/
+
+# CDK
+*.js
+*.d.ts
+!jest.config.js
+tsconfig.tsbuildinfo
