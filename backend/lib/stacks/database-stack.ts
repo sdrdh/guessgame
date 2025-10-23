@@ -22,7 +22,9 @@ export class DatabaseStack extends cdk.Stack {
       stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,
       timeToLiveAttribute: 'ttl',
       removalPolicy: cdk.RemovalPolicy.DESTROY, // Change to RETAIN for production
-      pointInTimeRecovery: true
+      pointInTimeRecoverySpecification: {
+        pointInTimeRecoveryEnabled: true
+      }
     });
 
     new cdk.CfnOutput(this, 'TableName', {

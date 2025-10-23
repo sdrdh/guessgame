@@ -81,7 +81,7 @@
 		</Card.Content>
 	</Card.Root>
 
-	<!-- Active Guess or Guess Buttons -->
+	<!-- Active Guess Info -->
 	{#if gameStore.hasActiveGuess && gameStore.activeGuess}
 		<Card.Root class="mb-4">
 			<Card.Header>
@@ -119,34 +119,34 @@
 				</div>
 			</Card.Content>
 		</Card.Root>
-	{:else}
-		<Card.Root>
-			<Card.Header>
-				<Card.Title>Make Your Guess</Card.Title>
-			</Card.Header>
-			<Card.Content>
-				<div class="grid grid-cols-2 gap-4">
-					<Button
-						size="lg"
-						class="text-xl"
-						onclick={() => handleGuess('up')}
-						disabled={gameStore.isLoading}
-					>
-						<span class="mr-2">⬆️</span> UP
-					</Button>
-					<Button
-						variant="secondary"
-						size="lg"
-						class="text-xl"
-						onclick={() => handleGuess('down')}
-						disabled={gameStore.isLoading}
-					>
-						<span class="mr-2">⬇️</span> DOWN
-					</Button>
-				</div>
-			</Card.Content>
-		</Card.Root>
 	{/if}
+
+	<!-- Guess Buttons -->
+	<Card.Root class="mb-4">
+		<Card.Header>
+			<Card.Title>Make Your Guess</Card.Title>
+		</Card.Header>
+		<Card.Content>
+			<div class="grid grid-cols-2 gap-4">
+				<Button
+					size="lg"
+					class="text-xl bg-green-600 hover:bg-green-700 text-white"
+					onclick={() => handleGuess('up')}
+					disabled={gameStore.isLoading || gameStore.hasActiveGuess}
+				>
+					<span class="mr-2">⬆️</span> UP
+				</Button>
+				<Button
+					size="lg"
+					class="text-xl bg-red-600 hover:bg-red-700 text-white"
+					onclick={() => handleGuess('down')}
+					disabled={gameStore.isLoading || gameStore.hasActiveGuess}
+				>
+					<span class="mr-2">⬇️</span> DOWN
+				</Button>
+			</div>
+		</Card.Content>
+	</Card.Root>
 
 	<!-- Recent Guesses History -->
 	<Card.Root class="mt-4">
@@ -158,13 +158,8 @@
 				<div class="space-y-3">
 					{#each gameStore.guessHistory as guess (guess.guessId)}
 						{#if guess.resolved && guess.endPrice}
-							<div class="flex items-center justify-between p-3 bg-muted rounded-lg">
+							<div class="flex items-center justify-between p-3 rounded-lg {guess.correct ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}">
 								<div class="flex items-center gap-3">
-									{#if guess.correct}
-										<Badge variant="default" class="bg-green-600 hover:bg-green-700">✅ WIN</Badge>
-									{:else}
-										<Badge variant="destructive">❌ LOSS</Badge>
-									{/if}
 									<span class="font-semibold uppercase">
 										{guess.direction} {guess.direction === 'up' ? '⬆️' : '⬇️'}
 									</span>

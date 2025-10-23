@@ -26,6 +26,7 @@ export const queries = {
         activeGuess {
           guessId
           userId
+          instrument
           direction
           startPrice
           startTime
@@ -46,6 +47,7 @@ export const queries = {
       getGuessHistory(limit: $limit) {
         guessId
         userId
+        instrument
         direction
         startPrice
         startTime
@@ -66,6 +68,7 @@ export const mutations = {
       createGuess(direction: $direction) {
         guessId
         userId
+        instrument
         direction
         startPrice
         startTime
@@ -86,6 +89,7 @@ export const subscriptions = {
       onGuessUpdated(userId: $userId) {
         guessId
         userId
+        instrument
         direction
         startPrice
         startTime
@@ -118,6 +122,7 @@ export enum Direction {
 export interface Guess {
   guessId: string;
   userId: string;
+  instrument: string;
   direction: Direction;
   startPrice: number;
   startTime: number;

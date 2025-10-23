@@ -1,5 +1,6 @@
 import { graphqlClient, queries, mutations, subscriptions, type User, type Guess, type Price, Direction } from '$lib/graphql-client';
 import { fetchAuthSession, getCurrentUser } from 'aws-amplify/auth';
+import { fetchBTCPrice } from '$lib/services/coingecko';
 
 // Game state using Svelte 5 runes
 class GameStore {
@@ -15,6 +16,7 @@ class GameStore {
   private guessSubscription: any = null;
   private priceSubscription: any = null;
   private timeInterval: any = null;
+  private priceInterval: any = null;
 
   // Computed values using $derived
   get activeGuess() {
@@ -78,6 +80,9 @@ class GameStore {
       // Start time interval for countdown updates
       this.startTimeInterval();
 
+      // Start price fetching from CoinGecko (baseline updates every 15s)
+      this.startPriceInterval();
+
       // Load user profile (won't throw, just sets error if fails)
       await this.loadUser();
 
@@ -109,6 +114,32 @@ class GameStore {
     this.timeInterval = setInterval(() => {
       this.currentTime = Math.floor(Date.now() / 1000);
     }, 1000);
+  }
+
+  // Fetch price from CoinGecko
+  private async fetchPriceFromCoinGecko() {
+    try {
+      const price = await fetchBTCPrice();
+      this.currentPrice = price;
+      this.priceTimestamp = Math.floor(Date.now() / 1000);
+      console.log('✅ CoinGecko price updated:', price);
+    } catch (err) {
+      console.error('❌ Failed to fetch price from CoinGecko:', err);
+      // AppSync subscription will continue to provide updates
+    }
+  }
+
+  // Start interval to fetch price from CoinGecko every 15 seconds
+  private startPriceInterval() {
+    if (typeof window === 'undefined') return;
+
+    // Fetch immediately
+    this.fetchPriceFromCoinGecko();
+
+    // Then fetch every 15 seconds
+    this.priceInterval = setInterval(() => {
+      this.fetchPriceFromCoinGecko();
+    }, 15000); // 15 seconds
   }
 
   // Load user profile from backend
@@ -272,6 +303,10 @@ class GameStore {
     if (this.timeInterval) {
       clearInterval(this.timeInterval);
       this.timeInterval = null;
+    }
+    if (this.priceInterval) {
+      clearInterval(this.priceInterval);
+      this.priceInterval = null;
     }
   }
 

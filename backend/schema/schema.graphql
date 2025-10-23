@@ -10,6 +10,7 @@ type User {
 type Guess @aws_api_key @aws_cognito_user_pools {
   guessId: ID!
   userId: ID!
+  instrument: String!
   direction: Direction!
   startPrice: Float!
   startTime: AWSTimestamp!
@@ -59,6 +60,7 @@ type Subscription {
 input GuessInput {
   guessId: ID!
   userId: ID!
+  instrument: String!
   direction: Direction!
   startPrice: Float!
   startTime: AWSTimestamp!

@@ -15,6 +15,7 @@ interface CreateGuessInput {
 interface Guess {
   guessId: string;
   userId: string;
+  instrument: string;
   direction: 'up' | 'down';
   startPrice: number;
   startTime: number;
@@ -57,15 +58,19 @@ export const handler = async (event: AppSyncResolverEvent<CreateGuessInput>): Pr
       throw new Error('You already have an active guess. Wait for it to resolve before making another guess.');
     }
 
+    // Default to BTCUSD for now
+    const instrument = 'BTCUSD';
+
     // Get current BTC price
-    console.log('Fetching current BTC price...');
-    const currentPrice = await getCurrentInstrumentPrice('BTCUSD');
-    console.log(`Current BTC price: $${currentPrice}`);
+    console.log(`Fetching current ${instrument} price...`);
+    const currentPrice = await getCurrentInstrumentPrice(instrument);
+    console.log(`Current ${instrument} price: $${currentPrice}`);
 
     // Create guess object
     const guess: Guess = {
       guessId: randomUUID(),
       userId,
+      instrument,
       direction,
       startPrice: currentPrice,
       startTime: Date.now(),
@@ -80,6 +85,7 @@ export const handler = async (event: AppSyncResolverEvent<CreateGuessInput>): Pr
     const messageBody = JSON.stringify({
       userId,
       guessId: guess.guessId,
+      instrument: guess.instrument,
       direction: guess.direction,
       startPrice: guess.startPrice,
       startTime: guess.startTime

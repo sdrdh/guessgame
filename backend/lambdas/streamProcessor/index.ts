@@ -35,6 +35,7 @@ const UPDATE_PRICE_MUTATION = `
 interface Guess {
   guessId: string;
   userId: string;
+  instrument: string;
   direction: 'up' | 'down';
   startPrice: number;
   startTime: number;
@@ -81,6 +82,7 @@ async function handleGuessResolution(item: any): Promise<void> {
   const guess: Guess = {
     guessId: item.guessId,
     userId: item.userId || userId,
+    instrument: item.instrument,
     direction: item.direction,
     startPrice: item.startPrice,
     startTime: item.startTime,
@@ -98,6 +100,7 @@ async function handleGuessResolution(item: any): Promise<void> {
     guess: {
       guessId: guess.guessId,
       userId: userId,
+      instrument: guess.instrument,
       direction: guess.direction,
       startPrice: guess.startPrice,
       startTime: guess.startTime,

@@ -22,6 +22,7 @@ export interface User {
 export interface Guess {
   guessId: string;
   userId: string;
+  instrument: string;
   direction: 'up' | 'down';
   startPrice: number;
   startTime: number;

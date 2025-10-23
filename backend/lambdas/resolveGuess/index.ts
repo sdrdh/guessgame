@@ -12,6 +12,7 @@ const MIN_TIME_ELAPSED = 60000; // 60 seconds in milliseconds
 interface GuessMessage {
   userId: string;
   guessId: string;
+  instrument: string;
   direction: 'up' | 'down';
   startPrice: number;
   startTime: number;
@@ -21,24 +22,24 @@ interface GuessMessage {
 export const handler = async (event: SQSEvent): Promise<void> => {
   const record = event.Records[0];
   const message: GuessMessage = JSON.parse(record.body);
-  const { userId, guessId, direction, startPrice, startTime, retryCount = 0 } = message;
+  const { userId, guessId, instrument, direction, startPrice, startTime, retryCount = 0 } = message;
 
   console.log(`Resolving guess ${guessId} for user ${userId} (retry ${retryCount}/${MAX_RETRIES})`);
-  console.log(`Start price: $${startPrice}, Direction: ${direction}`);
+  console.log(`Instrument: ${instrument}, Start price: $${startPrice}, Direction: ${direction}`);
 
   try {
     // First, check for historical prices from cache (at least 60s after guess started)
     const minTimestamp = startTime + MIN_TIME_ELAPSED;
     console.log(`Checking for historical price after ${new Date(minTimestamp).toISOString()}...`);
 
-    let endPrice = await findDifferentPriceAfter(minTimestamp, startPrice, 'BTCUSD');
+    let endPrice = await findDifferentPriceAfter(minTimestamp, startPrice, instrument);
 
     if (endPrice) {
       console.log(`Found different historical price: $${endPrice}`);
     } else {
       // No different historical price found, fetch current price (which will cache it for others)
       console.log('No different historical price found, fetching current price...');
-      const currentPrice = await getCurrentInstrumentPrice('BTCUSD');
+      const currentPrice = await getCurrentInstrumentPrice(instrument);
       console.log(`Current price from API: $${currentPrice}`);
 
       if (currentPrice === startPrice && retryCount < MAX_RETRIES) {
@@ -48,6 +49,7 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         const retryMessage: GuessMessage = {
           userId,
           guessId,
+          instrument,
           direction,
           startPrice,
           startTime,

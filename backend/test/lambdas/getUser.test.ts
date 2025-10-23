@@ -52,6 +52,8 @@ describe('getUser Lambda', () => {
 
     const mockGuess = {
       guessId: 'guess-123',
+      userId: 'user-123',
+      instrument: 'BTCUSD',
       direction: 'up' as const,
       startPrice: 45000,
       startTime: Date.now(),

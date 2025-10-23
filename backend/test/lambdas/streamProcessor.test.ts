@@ -27,6 +27,7 @@ describe('streamProcessor Lambda', () => {
       PK: { S: 'USER#user-123' },
       SK: { S: 'GUESS#ACTIVE' },
       guessId: { S: 'guess-456' },
+      instrument: { S: 'BTCUSD' },
       direction: { S: 'up' },
       startPrice: { N: '45000' },
       startTime: { N: String(Date.now()) },
