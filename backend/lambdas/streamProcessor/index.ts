@@ -10,6 +10,7 @@ const UPDATE_GUESS_STATUS_MUTATION = `
     updateGuessStatus(userId: $userId, guess: $guess) {
       guessId
       userId
+      instrument
       direction
       startPrice
       startTime

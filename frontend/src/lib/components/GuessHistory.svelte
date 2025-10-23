@@ -3,6 +3,7 @@
 
 	interface GuessHistoryItem {
 		guessId: string;
+		instrument: string;
 		direction: 'up' | 'down';
 		startPrice: number;
 		endPrice?: number;
@@ -37,9 +38,14 @@
 					{#if guess.resolved && guess.endPrice}
 						<div class="flex items-center justify-between p-3 rounded-lg {guess.correct ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}">
 							<div class="flex items-center gap-3">
-								<span class="font-semibold uppercase">
-									{guess.direction} {guess.direction === 'up' ? '⬆️' : '⬇️'}
-								</span>
+								<div>
+									<div class="text-xs text-muted-foreground font-medium">
+										{guess.instrument}
+									</div>
+									<span class="font-semibold uppercase">
+										{guess.direction} {guess.direction === 'up' ? '⬆️' : '⬇️'}
+									</span>
+								</div>
 							</div>
 							<div class="text-right text-sm">
 								<div class="font-mono">

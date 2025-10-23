@@ -12,7 +12,7 @@
 
 	interface Props {
 		guess: Guess | null;
-		timeUntilResolution?: string;
+		timeUntilResolution: string | null;
 	}
 
 	let { guess, timeUntilResolution }: Props = $props();
@@ -29,6 +29,10 @@
 		</Card.Header>
 		<Card.Content>
 			<div class="space-y-2">
+				<div class="flex justify-between">
+					<span class="text-muted-foreground">Instrument:</span>
+					<span class="font-semibold">{guess.instrument}</span>
+				</div>
 				<div class="flex justify-between">
 					<span class="text-muted-foreground">Direction:</span>
 					<span class="font-semibold uppercase">

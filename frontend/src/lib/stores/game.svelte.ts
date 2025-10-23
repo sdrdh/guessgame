@@ -20,7 +20,7 @@ class GameStore {
 
   // Computed values using $derived
   get activeGuess() {
-    return this.user?.activeGuess;
+    return this.user?.activeGuess || null;
   }
 
   get hasActiveGuess() {
@@ -233,6 +233,12 @@ class GameStore {
           console.log('📨 Raw subscription data received:', JSON.stringify(response, null, 2));
           const updatedGuess = response.data?.onGuessUpdated as Guess;
           console.log('✅ Parsed guess update:', updatedGuess);
+
+          // Check for errors or null data
+          if (!updatedGuess) {
+            console.error('❌ Received null guess update, errors:', response.errors);
+            return;
+          }
 
           // Update active guess
           if (this.user?.activeGuess?.guessId === updatedGuess.guessId) {
