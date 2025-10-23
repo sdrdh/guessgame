@@ -1,12 +1,17 @@
 import * as cdk from 'aws-cdk-lib';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
 import { Construct } from 'constructs';
+
+export interface AuthStackProps extends cdk.StackProps {
+  postConfirmationFunction?: lambda.IFunction;
+}
 
 export class AuthStack extends cdk.Stack {
   public readonly userPool: cognito.UserPool;
   public readonly userPoolClient: cognito.UserPoolClient;
 
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props?: AuthStackProps) {
     super(scope, id, props);
 
     // User Pool
@@ -34,7 +39,13 @@ export class AuthStack extends cdk.Stack {
         requireSymbols: false
       },
       accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
-      removalPolicy: cdk.RemovalPolicy.DESTROY // Change to RETAIN for production
+      removalPolicy: cdk.RemovalPolicy.DESTROY, // Change to RETAIN for production
+      // Lambda triggers
+      lambdaTriggers: props?.postConfirmationFunction
+        ? {
+            postConfirmation: props.postConfirmationFunction
+          }
+        : undefined
     });
 
     // User Pool Client

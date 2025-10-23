@@ -1,6 +1,6 @@
 import { AppSyncResolverEvent } from 'aws-lambda';
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
-import { getUser, createUser, getActiveGuess, createGuess } from '../shared/db';
+import { getUser, getActiveGuess, createGuess } from '../shared/db';
 import { getCurrentInstrumentPrice } from '../shared/instrumentPrice';
 import { randomUUID } from 'crypto';
 
@@ -44,13 +44,14 @@ export const handler = async (event: AppSyncResolverEvent<CreateGuessInput>): Pr
   }
 
   try {
-    // Check if user exists, create if not
-    let user = await getUser(userId);
+    // Verify user exists (should be created by Cognito post-confirmation trigger)
+    const user = await getUser(userId);
     if (!user) {
-      const email = identity?.claims?.email || 'unknown@example.com';
-      console.log(`Creating new user: ${userId} (${email})`);
-      user = await createUser(userId, email);
+      console.error('❌ User not found in database:', userId);
+      throw new Error('User profile not found. Please contact support.');
     }
+
+    console.log(`✅ User verified: ${user.email}`);
 
     // Check for active guess
     const activeGuess = await getActiveGuess(userId);

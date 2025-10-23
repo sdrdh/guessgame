@@ -17,6 +17,7 @@ export class ComputeStack extends cdk.Stack {
   public readonly resolveGuessFunction: lambdaNodejs.NodejsFunction;
   public readonly getUserFunction: lambdaNodejs.NodejsFunction;
   public readonly getGuessHistoryFunction: lambdaNodejs.NodejsFunction;
+  public readonly postConfirmationFunction: lambdaNodejs.NodejsFunction;
 
   constructor(scope: Construct, id: string, props: ComputeStackProps) {
     super(scope, id, props);
@@ -105,6 +106,19 @@ export class ComputeStack extends cdk.Stack {
 
     // Grant permissions
     table.grantReadData(this.getGuessHistoryFunction);
+
+    // PostConfirmation Lambda (Cognito Trigger)
+    this.postConfirmationFunction = new lambdaNodejs.NodejsFunction(this, 'PostConfirmationFunction', {
+      ...commonProps,
+      functionName: 'guess-game-post-confirmation',
+      entry: path.join(__dirname, '../../lambdas/postConfirmation/index.ts'),
+      handler: 'handler',
+      timeout: cdk.Duration.seconds(10), // Quick trigger
+      environment: commonEnv
+    });
+
+    // Grant permissions
+    table.grantWriteData(this.postConfirmationFunction);
 
     // Outputs
     new cdk.CfnOutput(this, 'CreateGuessFunctionArn', {

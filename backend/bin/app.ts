@@ -17,11 +17,11 @@ const env = {
 };
 
 // Foundation stacks (no dependencies)
-const authStack = new AuthStack(app, 'GuessGameAuthStack', { env });
 const databaseStack = new DatabaseStack(app, 'GuessGameDatabaseStack', { env });
 const queueStack = new QueueStack(app, 'GuessGameQueueStack', { env });
 
 // Compute stack depends on database and queue
+// Must be created BEFORE AuthStack so we can pass postConfirmation Lambda to Cognito
 const computeStack = new ComputeStack(app, 'GuessGameComputeStack', {
   env,
   table: databaseStack.table,
@@ -29,6 +29,13 @@ const computeStack = new ComputeStack(app, 'GuessGameComputeStack', {
 });
 computeStack.addDependency(databaseStack);
 computeStack.addDependency(queueStack);
+
+// Auth stack created after Compute so we can attach the postConfirmation trigger
+const authStack = new AuthStack(app, 'GuessGameAuthStack', {
+  env,
+  postConfirmationFunction: computeStack.postConfirmationFunction
+});
+authStack.addDependency(computeStack);
 
 // API stack depends on auth and compute
 const apiStack = new ApiStack(app, 'GuessGameApiStack', {
