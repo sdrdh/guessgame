@@ -5,13 +5,16 @@ import { fetchAuthSession, getCurrentUser } from 'aws-amplify/auth';
 class GameStore {
   user = $state<User | null>(null);
   currentPrice = $state<number>(0);
+  priceTimestamp = $state<number>(0);
   guessHistory = $state<Guess[]>([]);
   isLoading = $state<boolean>(false);
   error = $state<string | null>(null);
+  currentTime = $state<number>(Math.floor(Date.now() / 1000));
 
   // Subscription handlers
   private guessSubscription: any = null;
   private priceSubscription: any = null;
+  private timeInterval: any = null;
 
   // Computed values using $derived
   get activeGuess() {
@@ -26,6 +29,44 @@ class GameStore {
     return this.user?.score ?? 0;
   }
 
+  get timeUntilResolution() {
+    if (!this.activeGuess || this.activeGuess.resolved) {
+      return null;
+    }
+
+    // startTime is a Unix timestamp in seconds (AWSTimestamp)
+    // If it's in milliseconds, convert to seconds
+    const startTimeSeconds = this.activeGuess.startTime > 10000000000
+      ? Math.floor(this.activeGuess.startTime / 1000)
+      : this.activeGuess.startTime;
+
+    const resolutionTime = startTimeSeconds + 60; // 60 seconds after start
+    const secondsRemaining = resolutionTime - this.currentTime;
+
+    if (secondsRemaining <= 0) {
+      return 'Resolving...';
+    }
+
+    return `Resolving in ${secondsRemaining}s`;
+  }
+
+  get priceLastUpdated() {
+    if (!this.priceTimestamp) {
+      return null;
+    }
+
+    const secondsAgo = this.currentTime - this.priceTimestamp;
+
+    if (secondsAgo < 5) {
+      return 'Just now';
+    } else if (secondsAgo < 60) {
+      return `${secondsAgo} seconds ago`;
+    } else {
+      const minutesAgo = Math.floor(secondsAgo / 60);
+      return `${minutesAgo} minute${minutesAgo > 1 ? 's' : ''} ago`;
+    }
+  }
+
   // Initialize store and load user data
   async init() {
     try {
@@ -33,6 +74,9 @@ class GameStore {
       this.error = null;
 
       console.log('Initializing game store...');
+
+      // Start time interval for countdown updates
+      this.startTimeInterval();
 
       // Load user profile (won't throw, just sets error if fails)
       await this.loadUser();
@@ -56,6 +100,15 @@ class GameStore {
     } finally {
       this.isLoading = false;
     }
+  }
+
+  // Start interval to update current time every second
+  private startTimeInterval() {
+    if (typeof window === 'undefined') return;
+
+    this.timeInterval = setInterval(() => {
+      this.currentTime = Math.floor(Date.now() / 1000);
+    }, 1000);
   }
 
   // Load user profile from backend
@@ -195,6 +248,7 @@ class GameStore {
           const priceUpdate = response.data.onPriceUpdated as Price;
           console.log('✅ Price subscription received update:', priceUpdate);
           this.currentPrice = priceUpdate.price;
+          this.priceTimestamp = priceUpdate.timestamp;
         },
         error: (err: any) => {
           console.error('Price subscription error:', err);
@@ -214,6 +268,10 @@ class GameStore {
     if (this.priceSubscription) {
       this.priceSubscription.unsubscribe();
       this.priceSubscription = null;
+    }
+    if (this.timeInterval) {
+      clearInterval(this.timeInterval);
+      this.timeInterval = null;
     }
   }
 

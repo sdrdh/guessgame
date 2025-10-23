@@ -7,6 +7,7 @@ import { QueueStack } from '../lib/stacks/queue-stack';
 import { ComputeStack } from '../lib/stacks/compute-stack';
 import { ApiStack } from '../lib/stacks/api-stack';
 import { IntegrationStack } from '../lib/stacks/integration-stack';
+import { FrontendStack } from '../lib/stacks/frontend-stack';
 
 const app = new cdk.App();
 
@@ -49,6 +50,9 @@ const integrationStack = new IntegrationStack(app, 'GuessGameIntegrationStack', 
 });
 integrationStack.addDependency(databaseStack);
 integrationStack.addDependency(apiStack);
+
+// Frontend stack (no dependencies, can be deployed independently)
+const frontendStack = new FrontendStack(app, 'GuessGameFrontendStack', { env });
 
 // Add tags to all stacks
 cdk.Tags.of(app).add('Project', 'GuessGame');

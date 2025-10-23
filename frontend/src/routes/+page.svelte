@@ -3,6 +3,10 @@
 	import { goto } from '$app/navigation';
 	import { gameStore } from '$lib/stores/game.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
+	import * as Card from '$lib/components/ui/card';
+	import { Button } from '$lib/components/ui/button';
+	import * as Alert from '$lib/components/ui/alert';
+	import { Badge } from '$lib/components/ui/badge';
 
 	onMount(async () => {
 		// Initialize game store
@@ -41,100 +45,125 @@
 	<!-- Header -->
 	<div class="flex justify-between items-center mb-6">
 		<h1 class="text-3xl font-bold">Bitcoin Guessing Game</h1>
-		<button class="btn btn-ghost btn-sm" onclick={handleLogout}>
+		<Button variant="ghost" size="sm" onclick={handleLogout}>
 			Logout
-		</button>
+		</Button>
 	</div>
 
 	{#if gameStore.error}
-		<div class="alert alert-error mb-4">
-			<span>{gameStore.error}</span>
-		</div>
+		<Alert.Root variant="destructive" class="mb-4">
+			<Alert.Description>{gameStore.error}</Alert.Description>
+		</Alert.Root>
 	{/if}
 
 	<!-- Current Price Card -->
-	<div class="card bg-base-200 shadow-xl mb-4">
-		<div class="card-body">
-			<h2 class="text-sm opacity-70 mb-2">Current BTC Price</h2>
+	<Card.Root class="mb-4">
+		<Card.Content class="pt-6">
+			<h2 class="text-sm text-muted-foreground mb-2">Current BTC Price</h2>
 			{#if gameStore.currentPrice > 0}
 				<p class="text-4xl font-bold">${formatPrice(gameStore.currentPrice)}</p>
-				<p class="text-xs opacity-60 mt-1">Live price updates</p>
+				{#if gameStore.priceLastUpdated}
+					<p class="text-xs text-muted-foreground mt-1">Updated {gameStore.priceLastUpdated}</p>
+				{:else}
+					<p class="text-xs text-muted-foreground mt-1">Live price updates</p>
+				{/if}
 			{:else}
-				<p class="text-4xl font-bold opacity-50">Loading...</p>
+				<p class="text-4xl font-bold text-muted-foreground">Loading...</p>
 			{/if}
-		</div>
-	</div>
+		</Card.Content>
+	</Card.Root>
 
 	<!-- Score Card -->
-	<div class="card bg-base-200 shadow-xl mb-4">
-		<div class="card-body">
-			<h2 class="text-sm opacity-70 mb-2">Your Score</h2>
+	<Card.Root class="mb-4">
+		<Card.Content class="pt-6">
+			<h2 class="text-sm text-muted-foreground mb-2">Your Score</h2>
 			<p class="text-3xl font-bold">{gameStore.score}</p>
-		</div>
-	</div>
+		</Card.Content>
+	</Card.Root>
 
 	<!-- Active Guess or Guess Buttons -->
 	{#if gameStore.hasActiveGuess && gameStore.activeGuess}
-		<div class="card bg-base-200 shadow-xl mb-4">
-			<div class="card-body">
-				<h3 class="card-title mb-4">Active Guess</h3>
+		<Card.Root class="mb-4">
+			<Card.Header>
+				<Card.Title>Active Guess</Card.Title>
+			</Card.Header>
+			<Card.Content>
 				<div class="space-y-2">
 					<div class="flex justify-between">
-						<span class="opacity-70">Direction:</span>
+						<span class="text-muted-foreground">Direction:</span>
 						<span class="font-semibold uppercase">
 							{gameStore.activeGuess.direction}
 							{gameStore.activeGuess.direction === 'up' ? '⬆️' : '⬇️'}
 						</span>
 					</div>
 					<div class="flex justify-between">
-						<span class="opacity-70">Start Price:</span>
+						<span class="text-muted-foreground">Start Price:</span>
 						<span class="font-semibold">${formatPrice(gameStore.activeGuess.startPrice)}</span>
 					</div>
 					<div class="flex justify-between">
-						<span class="opacity-70">Status:</span>
-						<span class="badge badge-warning">Resolving...</span>
+						<span class="text-muted-foreground">Status:</span>
+						{#if gameStore.timeUntilResolution}
+							{@const seconds = gameStore.timeUntilResolution.includes('in ')
+								? parseInt(gameStore.timeUntilResolution.match(/\d+/)?.[0] || '0')
+								: 0}
+							<Badge
+								variant="secondary"
+								class={seconds > 0 && seconds <= 10 ? 'bg-orange-500 hover:bg-orange-600 text-white' : ''}
+							>
+								{gameStore.timeUntilResolution}
+							</Badge>
+						{:else}
+							<Badge variant="secondary">Resolving...</Badge>
+						{/if}
 					</div>
 				</div>
-			</div>
-		</div>
+			</Card.Content>
+		</Card.Root>
 	{:else}
-		<div class="card bg-base-200 shadow-xl">
-			<div class="card-body">
-				<h3 class="card-title mb-4">Make Your Guess</h3>
+		<Card.Root>
+			<Card.Header>
+				<Card.Title>Make Your Guess</Card.Title>
+			</Card.Header>
+			<Card.Content>
 				<div class="grid grid-cols-2 gap-4">
-					<button
-						class="btn btn-primary btn-lg text-xl"
+					<Button
+						size="lg"
+						class="text-xl"
 						onclick={() => handleGuess('up')}
 						disabled={gameStore.isLoading}
 					>
 						<span class="mr-2">⬆️</span> UP
-					</button>
-					<button
-						class="btn btn-secondary btn-lg text-xl"
+					</Button>
+					<Button
+						variant="secondary"
+						size="lg"
+						class="text-xl"
 						onclick={() => handleGuess('down')}
 						disabled={gameStore.isLoading}
 					>
 						<span class="mr-2">⬇️</span> DOWN
-					</button>
+					</Button>
 				</div>
-			</div>
-		</div>
+			</Card.Content>
+		</Card.Root>
 	{/if}
 
 	<!-- Recent Guesses History -->
-	<div class="card bg-base-200 shadow-xl mt-4">
-		<div class="card-body">
-			<h3 class="card-title mb-4">Recent Guesses</h3>
+	<Card.Root class="mt-4">
+		<Card.Header>
+			<Card.Title>Recent Guesses</Card.Title>
+		</Card.Header>
+		<Card.Content>
 			{#if gameStore.guessHistory.length > 0}
 				<div class="space-y-3">
 					{#each gameStore.guessHistory as guess (guess.guessId)}
 						{#if guess.resolved && guess.endPrice}
-							<div class="flex items-center justify-between p-3 bg-base-300 rounded-lg">
+							<div class="flex items-center justify-between p-3 bg-muted rounded-lg">
 								<div class="flex items-center gap-3">
 									{#if guess.correct}
-										<span class="badge badge-success">✅ WIN</span>
+										<Badge variant="default" class="bg-green-600 hover:bg-green-700">✅ WIN</Badge>
 									{:else}
-										<span class="badge badge-error">❌ LOSS</span>
+										<Badge variant="destructive">❌ LOSS</Badge>
 									{/if}
 									<span class="font-semibold uppercase">
 										{guess.direction} {guess.direction === 'up' ? '⬆️' : '⬇️'}
@@ -145,7 +174,7 @@
 										${formatPrice(guess.startPrice)} → ${formatPrice(guess.endPrice)}
 									</div>
 									{#if guess.resolvedAt}
-										<div class="opacity-60">{formatTime(guess.resolvedAt)}</div>
+										<div class="text-muted-foreground">{formatTime(guess.resolvedAt)}</div>
 									{/if}
 								</div>
 							</div>
@@ -153,8 +182,8 @@
 					{/each}
 				</div>
 			{:else}
-				<p class="text-center opacity-60 py-4">No guesses yet. Make your first guess above!</p>
+				<p class="text-center text-muted-foreground py-4">No guesses yet. Make your first guess above!</p>
 			{/if}
-		</div>
-	</div>
+		</Card.Content>
+	</Card.Root>
 </div>

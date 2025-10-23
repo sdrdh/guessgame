@@ -5,22 +5,22 @@
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { configureAmplify } from '$lib/aws-config';
 	import '../app.css';
-
+	
 	let { children } = $props();
-
+	
 	// Configure Amplify immediately (before anything else)
 	if (typeof window !== 'undefined') {
 		configureAmplify();
 	}
-
+	
 	// Initialize auth on mount
 	onMount(async () => {
 		await authStore.init();
 	});
-
+	
 	// Protect routes that require authentication
 	$effect(() => {
-		const publicRoutes = ['/login'];
+		const publicRoutes = ['/login', '/verify'];
 		const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
 
 		// Wait for auth to be initialized

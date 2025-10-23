@@ -9,19 +9,23 @@ Players guess whether the Bitcoin price will go UP or DOWN. After 60 seconds, th
 ### Features
 
 - Real-time Bitcoin price updates via WebSocket subscriptions
-- AWS Cognito authentication
+- Countdown timer showing time until guess resolution
+- Live price update timestamps
+- AWS Cognito authentication with email verification
 - Serverless backend with AWS Lambda, DynamoDB, SQS, and AppSync
 - Live guess resolution with automatic scoring
 - Guess history tracking
-- Mobile-responsive UI with DaisyUI
+- Mobile-responsive UI with shadcn-svelte components
+- S3 + CloudFlare deployment for production hosting (no CloudFront needed!)
 
 ## Architecture
 
 ### Frontend
 - **Framework**: SvelteKit with Svelte 5
-- **Styling**: Tailwind CSS + DaisyUI
+- **Styling**: Tailwind CSS v4 + shadcn-svelte
 - **Auth**: AWS Amplify
 - **API**: GraphQL via AWS AppSync
+- **Hosting**: S3 Static Website + CloudFlare CDN
 
 ### Backend
 - **API**: AWS AppSync (GraphQL)
@@ -42,7 +46,9 @@ Players guess whether the Bitcoin price will go UP or DOWN. After 60 seconds, th
 
 ## Deployment
 
-### 1. Backend Deployment
+### Quick Deploy (Recommended)
+
+Deploy everything (backend + frontend) in one command:
 
 ```bash
 # Navigate to backend directory
@@ -54,56 +60,74 @@ npm install
 # Bootstrap CDK (first time only)
 npx cdk bootstrap
 
-# Deploy all stacks
+# Deploy all stacks including frontend
 npm run deploy
 ```
 
-After deployment, note the output values:
+The frontend stack will automatically:
+1. Build the SvelteKit app locally
+2. Upload to S3
+3. Enable S3 static website hosting
+
+After deployment, you'll see outputs including:
+- **WebsiteEndpoint**: S3 website endpoint (for CloudFlare CNAME)
 - Cognito User Pool ID
-- Cognito User Pool Client ID
 - AppSync API Endpoint
-- AppSync API Key
+- And more...
 
-### 2. Frontend Configuration
+### Configure CloudFlare
 
-Update the `.env` file in the `frontend` directory with your AWS deployment values:
+After deploying, set up your custom domain:
+
+See [CLOUDFLARE_SETUP.md](CLOUDFLARE_SETUP.md) for detailed instructions.
+
+**Quick summary:**
+1. Add CNAME in CloudFlare pointing to S3 website endpoint
+2. Enable Proxy (orange cloud)
+3. Set SSL/TLS to "Full"
+4. Done! Free SSL, CDN, and security included
+
+### Manual Frontend Development
+
+For local development:
 
 ```bash
 cd frontend
-```
 
-Edit `.env`:
-```env
-VITE_AWS_REGION=ap-south-1
-VITE_COGNITO_USER_POOL_ID=your-user-pool-id
-VITE_COGNITO_USER_POOL_CLIENT_ID=your-client-id
-VITE_APPSYNC_ENDPOINT=your-appsync-endpoint
-VITE_APPSYNC_REGION=ap-south-1
-VITE_APPSYNC_AUTH_TYPE=AMAZON_COGNITO_USER_POOLS
-VITE_APPSYNC_API_KEY=your-api-key
-```
-
-### 3. Frontend Setup
-
-```bash
 # Install dependencies
 npm install
+
+# Configure AWS settings (auto-populated from CDK outputs)
+# Edit src/lib/aws-config.ts if needed
 
 # Run development server
 npm run dev
 
-# Or build for production
+# Build for production (optional - CDK does this automatically)
 npm run build
-npm run preview
 ```
+
+### Deploy Only Frontend
+
+To update just the frontend:
+
+```bash
+cd backend
+npx cdk deploy GuessGameFrontendStack
+```
+
+This will rebuild and redeploy the frontend automatically.
 
 ## Usage
 
-1. **Register**: Create a new account with email and password
-2. **Login**: Sign in with your credentials
-3. **Make a Guess**: Click UP or DOWN based on your prediction
-4. **Wait for Resolution**: Your guess will resolve after 60 seconds
-5. **Track Score**: Win points for correct guesses
+1. **Register**: Create a new account with email and password (minimum 8 characters, must include number and special character)
+2. **Verify Email**: Enter the 6-digit code sent to your email
+3. **Login**: Sign in with your credentials
+4. **Watch Live Price**: See real-time Bitcoin price updates with timestamps
+5. **Make a Guess**: Click UP or DOWN based on your prediction
+6. **Track Countdown**: Watch the timer count down from 60 seconds
+7. **See Resolution**: Your guess automatically resolves and score updates
+8. **View History**: Check your recent guesses and win rate
 
 ## Development
 
@@ -177,6 +201,7 @@ guessgame/
 ├── frontend/                 # SvelteKit frontend
 │   ├── src/
 │   │   ├── lib/
+│   │   │   ├── components/ui/        # shadcn-svelte components
 │   │   │   ├── aws-config.ts         # Amplify configuration
 │   │   │   ├── graphql-client.ts     # GraphQL queries/mutations
 │   │   │   └── stores/
@@ -185,8 +210,9 @@ guessgame/
 │   │   └── routes/
 │   │       ├── +layout.svelte        # Root layout with auth
 │   │       ├── +page.svelte          # Home/game page
-│   │       └── login/+page.svelte    # Login/register page
-│   └── .env                          # Environment variables
+│   │       ├── login/+page.svelte    # Login/register page
+│   │       └── verify/+page.svelte   # Email verification page
+│   └── app.css                       # Global styles (Tailwind v4)
 │
 └── backend/                  # AWS CDK infrastructure
     ├── lib/stacks/
@@ -195,7 +221,8 @@ guessgame/
     │   ├── queue-stack.ts            # SQS Queue
     │   ├── compute-stack.ts          # Lambda Functions
     │   ├── api-stack.ts              # AppSync API
-    │   └── integration-stack.ts      # Stream Processor
+    │   ├── integration-stack.ts      # Stream Processor
+    │   └── frontend-stack.ts         # S3 Static Website (+ CloudFlare)
     ├── lambdas/
     │   ├── createGuess/              # Create guess Lambda
     │   ├── resolveGuess/             # Resolve guess Lambda
@@ -245,5 +272,6 @@ MIT
 Built with:
 - [SvelteKit](https://kit.svelte.dev/)
 - [AWS CDK](https://aws.amazon.com/cdk/)
-- [DaisyUI](https://daisyui.com/)
+- [shadcn-svelte](https://www.shadcn-svelte.com/)
+- [Tailwind CSS v4](https://tailwindcss.com/)
 - [AWS Amplify](https://aws.amazon.com/amplify/)
