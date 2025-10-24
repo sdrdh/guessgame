@@ -103,7 +103,7 @@ After deploying, set up your custom domain with CloudFlare DNS:
 
 3. **Test**: Visit `https://yourdomain.com` - should load with HTTPS
 
-**Why CloudFlare?** Domain already managed in CloudFlare. Using S3 + CloudFlare is simpler than S3 + CloudFront + CloudFlare (avoids SSL certificate complexity between CloudFront and CloudFlare).
+**Why CloudFlare?** The `sdrdhlab.xyz` domain is already managed in CloudFlare DNS. Using CloudFlare for both DNS and CDN is simpler than introducing CloudFront (would require managing SSL certificates between CloudFront and CloudFlare, and adds another layer of complexity). S3 Static Website + CloudFlare provides a streamlined deployment with fewer moving parts.
 
 ### Manual Frontend Development
 
@@ -154,7 +154,7 @@ This will rebuild and redeploy the frontend automatically.
 ```bash
 cd backend
 npm run build        # Compile TypeScript
-npm test            # Run tests (67 tests)
+npm test            # Run tests (52 tests)
 npm run deploy      # Deploy all stacks
 npx cdk synth       # Synthesize CloudFormation
 npx cdk diff        # Show changes
@@ -181,7 +181,7 @@ cd backend
 npm test
 ```
 
-**Test Coverage**: 67 tests covering:
+**Test Coverage**: 52 tests covering:
 - User creation and validation (postConfirmation)
 - Guess creation and validation (createGuess)
 - User profile retrieval (getUser)
@@ -201,6 +201,8 @@ npm test
 7. Check guess history
 
 ## Cost Estimation
+
+> **Note:** These are rough estimates (guesstimates) based on AWS pricing as of the documentation date. Actual costs may vary based on usage patterns, data transfer, AWS region, and pricing changes. Monitor your AWS billing dashboard for accurate cost tracking.
 
 ### Development (Light Testing)
 - **~$1.30/month**
@@ -283,7 +285,9 @@ guessgame/
 - **Solution**: Check AppSync endpoint and authentication in `.env`
 
 **Problem**: Subscriptions not working
-- **Solution**: Verify AppSync has real-time subscriptions enabled
+- **Solution 1**: Verify AppSync has real-time subscriptions enabled
+- **Solution 2**: Check for mutation/schema mismatches - subscription filters must match mutation response fields
+- **Solution 3**: Ensure filtered attributes (e.g., `userId` in `onGuessUpdated(userId: $userId)`) are included in the GraphQL schema's subscription definition and mutation response type
 
 ## License
 

@@ -102,10 +102,15 @@ graphqlClient.graphql({
 
 Frontend gets prices from **two sources**:
 
-1. **Coinbase direct** (every 15s) - Baseline, fallback
-2. **AppSync subscription** (real-time) - Low latency
+1. **Coinbase direct** (every 15s) - Baseline, ensures price always loads
+2. **AppSync subscription** (real-time) - Low latency when available
 
-Why: Redundancy + consistency across users.
+**Why both?**
+- AppSync `onPriceUpdated` only fires when backend updates prices (during guess creation/resolution by any user)
+- If no one is actively playing, AppSync may never push updates, leaving the UI with no price data
+- Coinbase polling ensures prices always display, even during low activity
+- AppSync provides real-time updates when users are actively playing
+- WebSocket subscription enables future features like live price charts
 
 ## AWS Configuration
 
@@ -192,5 +197,9 @@ src/
 
 **Amplify not configured**: Check `aws-config.ts` and `+layout.svelte`
 **GraphQL unauthorized**: Verify JWT token and auth mode
-**Subscriptions not working**: Check AppSync endpoint and credentials
+**Subscriptions not working**:
+  - Check AppSync endpoint and credentials
+  - Verify mutation response fields match subscription filter fields
+  - Ensure filtered attributes are defined in both the subscription schema and mutation response type (e.g., if filtering by `userId`, it must be in the mutation's return type)
+  - Check browser console for WebSocket connection errors
 **Price stuck**: Check Coinbase API accessibility

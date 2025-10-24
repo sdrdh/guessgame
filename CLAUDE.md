@@ -20,7 +20,7 @@ Bitcoin price guessing game: Players predict if Bitcoin price will go UP or DOWN
 ```bash
 # Backend
 cd backend
-npm test                  # Run all 67 tests
+npm test                  # Run all 52 tests
 npm run deploy            # Deploy all stacks + frontend
 
 # Frontend
@@ -117,10 +117,10 @@ Full details: [backend/DEVELOPMENT.md#6-streamprocessor](backend/DEVELOPMENT.md#
 ### Dual Price Updates (Frontend)
 
 Frontend receives prices from **two sources**:
-1. **Coinbase direct** (every 15s) - Baseline, continues if AppSync fails
+1. **Coinbase direct** (every 15s) - Baseline, ensures price always loads
 2. **AppSync subscription** (real-time) - Pushed from backend, lower latency
 
-Why both: Redundancy + consistency.
+**Why both?** AppSync updates only fire when backend updates prices (during guess creation/resolution by any user). Without Coinbase polling, users might see no price at all when trying to create a guess if no one else is actively playing. Coinbase ensures the price always displays, while AppSync provides real-time updates when available. This also enables future price charts via WebSocket data.
 
 Full details: [frontend/DEVELOPMENT.md#dual-price-updates](frontend/DEVELOPMENT.md#dual-price-updates)
 
@@ -183,4 +183,4 @@ frontend/
 **Why SQS instead of EventBridge?** [backend/DEVELOPMENT.md#why-sqs-instead-of-eventbridge-scheduler](backend/DEVELOPMENT.md#why-sqs-instead-of-eventbridge-scheduler)
 **Why single table?** [backend/DEVELOPMENT.md#why-single-table-instead-of-multiple-tables](backend/DEVELOPMENT.md#why-single-table-instead-of-multiple-tables)
 **Why Svelte 5?** [frontend/DEVELOPMENT.md#why-svelte-5-instead-of-react](frontend/DEVELOPMENT.md#why-svelte-5-instead-of-react)
-**Why dual price updates?** [frontend/DEVELOPMENT.md#why-dual-price-updates-coinbase--appsync](frontend/DEVELOPMENT.md#why-dual-price-updates-coinbase--appsync)
+**Why dual price updates?** AppSync only updates when backend fetches prices (during active gameplay). Coinbase polling ensures prices always display, even during low activity. WebSocket subscriptions also enable future features like live price charts. See: [frontend/DEVELOPMENT.md#dual-price-updates](frontend/DEVELOPMENT.md#dual-price-updates)

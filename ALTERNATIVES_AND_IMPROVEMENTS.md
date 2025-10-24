@@ -496,21 +496,123 @@ test('subscription receives guess updates', async () => {
 
 **Priority:** Medium (no critical bugs currently, but would improve developer velocity)
 
-**When to Implement:**
-- Before major UI refactoring
-- Before adding new game modes (e.g., multi-instrument, leaderboards)
-- When onboarding new frontend developers
+---
+
+### 5e. Live Price Charts Using WebSocket Data
+
+**Current State:**
+- Frontend receives price updates via two sources:
+  - Coinbase direct polling (every 15s)
+  - AppSync `onPriceUpdated` subscription (real-time when backend fetches prices)
+- Price data is stored in component state but not historized
+- No visual representation of price movement over time
+
+**Implementation:**
+
+1. **Store Price History in Frontend:**
+```typescript
+// src/lib/stores/priceHistory.svelte.ts
+class PriceHistoryStore {
+  history = $state<PricePoint[]>([]);
+  maxDataPoints = 60; // Last 60 updates (~15 minutes at 15s intervals)
+
+  addPrice(price: number, timestamp: number) {
+    this.history.push({ price, timestamp });
+    if (this.history.length > this.maxDataPoints) {
+      this.history.shift(); // Keep only recent data
+    }
+  }
+
+  get chartData() {
+    return this.history.map(p => ({ x: p.timestamp, y: p.price }));
+  }
+}
+```
+
+2. **Add Chart Component:**
+```svelte
+<!-- src/lib/components/PriceChart.svelte -->
+<script lang="ts">
+  import { priceHistoryStore } from '$lib/stores/priceHistory.svelte';
+  import { LineChart } from 'lightweight-charts'; // Or similar charting library
+
+  const chartData = priceHistoryStore.chartData;
+</script>
+
+<div class="price-chart">
+  <LineChart data={chartData} options={chartOptions} />
+  <p>Last 15 minutes</p>
+</div>
+```
+
+3. **Update Game Store to Populate History:**
+```typescript
+// src/lib/stores/game.svelte.ts
+import { priceHistoryStore } from './priceHistory.svelte';
+
+// In subscription handler
+this.priceSubscription = graphqlClient.graphql({
+  query: subscriptions.onPriceUpdated
+}).subscribe({
+  next: (response) => {
+    const price = response.data.onPriceUpdated.price;
+    const timestamp = response.data.onPriceUpdated.timestamp;
+    this.currentPrice = price;
+    priceHistoryStore.addPrice(price, timestamp); // NEW: Store for chart
+  }
+});
+```
+
+**Benefits:**
+- **Visual price trends**: Users see if Bitcoin is volatile or stable before guessing
+- **Better decision-making**: Charts help users identify price patterns
+- **Increased engagement**: Visual feedback is more engaging than numbers alone
+- **Leverages existing infrastructure**: WebSocket subscription already provides real-time data
+- **Low implementation cost**: Just UI layer changes, no backend modifications
+- **Zero backend cost**: Uses existing price update mechanisms
+
+**Data Sources:**
+
+The chart automatically populates from:
+1. **AppSync subscription** (`onPriceUpdated`) - Real-time during active gameplay
+2. **Coinbase polling** - Continuous 15s updates even during low activity
+3. **Historical price API** (future) - Pre-populate chart on page load with last 15 minutes
+
+**UI Placement:**
+
+```
+┌─────────────────────────────────────┐
+│  Bitcoin Price: $43,234.56          │
+│  ┌───────────────────────────────┐  │
+│  │    /\  /\    Chart            │  │
+│  │   /  \/  \  /                 │  │
+│  │  /        \/                  │  │
+│  └───────────────────────────────┘  │
+│  Last updated: 2s ago               │
+├─────────────────────────────────────┤
+│  [▲ UP]            [▼ DOWN]         │
+└─────────────────────────────────────┘
+```
+
+**Future Enhancements:**
+- Add timeframe selector (5m, 15m, 1h, 24h)
+- Show price markers for previous guesses
+- Overlay moving averages (MA20, MA50)
+- Toggle between line/candlestick charts
+
+**Priority:** Medium-High (high user value, low implementation cost)
 
 ---
 
 ## Implementation Priority
 
-| Improvement | Priority | Cost | Complexity | Estimated Effort | When to Implement |
-|-------------|----------|------|------------|------------------|-------------------|
-| **5c. X-Ray Tracing** | **High** | Low (~$1/month) | Low | 2-3 hours | **Next** (debugging/optimization) |
-| **5d. Frontend Tests** | Medium | None | Medium | 1-2 days | Before major UI changes |
-| **5b. Multi-Instrument** | Low | Low | Low | 2-3 hours | If user demand exists (UI change only) |
-| **5a. Fargate Price Fetcher** | Low | High (~$20/month) | High | 3-5 days | Only if traffic scales significantly |
+| Improvement | Priority | Cost | Complexity |
+|-------------|----------|------|------------|
+| **5c. X-Ray Tracing** | **High** | Low (~$1/month) | Low |
+| **5e. Price Charts** | Medium-High | None | Low-Medium |
+| **5d. Frontend Tests** | Medium | None | Medium |
+| **5b. Multi-Instrument** | Low | Low | Low |
+| **5a. Fargate Price Fetcher** | Low | High (~$20/month) | High |
 
 ---
 
@@ -536,5 +638,3 @@ The current architecture (AppSync + SQS + Lambda + DynamoDB) strikes a good bala
 1. **Add X-Ray tracing** (5c) for better observability (high value, low cost)
 2. **Add frontend component tests** (5d) to prevent regressions
 3. Monitor traffic and revisit Fargate price fetcher (5a) if resolution time becomes critical
-
-For questions or proposed changes, see [DEVELOPMENT.md#troubleshooting](./backend/DEVELOPMENT.md#troubleshooting).

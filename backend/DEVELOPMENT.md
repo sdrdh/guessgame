@@ -7,7 +7,7 @@ AWS CDK serverless backend with Lambda, DynamoDB, AppSync, and SQS.
 ```bash
 npm install              # Install dependencies
 npm run build           # Compile TypeScript
-npm test                # Run 67 tests
+npm test                # Run 52 tests
 npm run deploy          # Deploy all stacks + frontend
 npx cdk diff            # Preview changes
 npx cdk destroy --all   # Tear down
@@ -215,7 +215,7 @@ Automated deployment via GitHub Actions: [`.github/workflows/deploy.yml`](../.gi
 3. **Configure** AWS credentials via OIDC (no long-lived secrets!)
 4. **Install** dependencies
 5. **Build** TypeScript
-6. **Test** all 67 backend tests
+6. **Test** all 52 backend tests
 7. **Deploy backend** (6 stacks with `--outputs-file cdk-outputs.json`)
 8. **Build frontend** (runs `scripts/prepare-frontend.js`)
 9. **Deploy frontend** to S3
