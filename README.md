@@ -40,10 +40,12 @@ Players guess whether the Bitcoin price will go UP or DOWN. After 60 seconds, th
 - **Auth**: AWS Cognito
 - **Database**: DynamoDB
 - **Queue**: SQS for delayed guess resolution
-- **Functions**: 4 Lambda functions
+- **Functions**: 6 Lambda functions
   - `createGuess` - Validates and creates new guesses
   - `resolveGuess` - Resolves guesses after 60s with retry logic
   - `getUser` - Fetches user profile and score
+  - `getGuessHistory` - Fetches user's guess history
+  - `postConfirmation` - Cognito trigger that creates user profile after signup
   - `streamProcessor` - Pushes real-time updates via AppSync
 
 ## Prerequisites
@@ -179,11 +181,13 @@ npm test
 ```
 
 **Test Coverage**: 67 tests covering:
-- User creation and validation
-- Guess creation and validation
-- Price fetching and caching
-- Guess resolution with retry logic
-- Real-time stream processing
+- User creation and validation (postConfirmation)
+- Guess creation and validation (createGuess)
+- User profile retrieval (getUser)
+- Guess history retrieval (getGuessHistory)
+- Price fetching and caching (shared utilities)
+- Guess resolution with retry logic (resolveGuess)
+- Real-time stream processing (streamProcessor)
 
 ### Manual E2E Testing
 
@@ -242,6 +246,8 @@ guessgame/
     │   ├── createGuess/              # Create guess Lambda
     │   ├── resolveGuess/             # Resolve guess Lambda
     │   ├── getUser/                  # Get user Lambda
+    │   ├── getGuessHistory/          # Get guess history Lambda
+    │   ├── postConfirmation/         # Cognito post-signup Lambda
     │   ├── streamProcessor/          # Real-time updates Lambda
     │   └── shared/                   # Shared utilities
     └── schema/
