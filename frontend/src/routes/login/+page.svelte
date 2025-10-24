@@ -23,6 +23,32 @@
 		}
 	});
 
+	// Calculate password strength
+	function getPasswordStrength(): { level: 'weak' | 'medium' | 'strong'; label: string; color: string; width: string } {
+		if (!password || !isSignUp) {
+			return { level: 'weak', label: '', color: '', width: '0%' };
+		}
+
+		let strength = 0;
+		const hasLength = password.length >= 8;
+		const hasNumber = /\d/.test(password);
+		const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+		if (hasLength) strength++;
+		if (hasNumber) strength++;
+		if (hasSpecial) strength++;
+
+		if (strength === 3) {
+			return { level: 'strong', label: 'Strong', color: 'bg-green-500', width: '100%' };
+		} else if (strength === 2) {
+			return { level: 'medium', label: 'Medium', color: 'bg-yellow-500', width: '66%' };
+		} else if (password.length > 0) {
+			return { level: 'weak', label: 'Weak', color: 'bg-red-500', width: '33%' };
+		}
+
+		return { level: 'weak', label: '', color: '', width: '0%' };
+	}
+
 	function validatePassword() {
 		if (!isSignUp) {
 			passwordError = '';
@@ -127,6 +153,22 @@
 							required
 							placeholder="••••••••"
 						/>
+						{#if isSignUp && password}
+							{@const strength = getPasswordStrength()}
+							<div class="space-y-1">
+								<div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+									<div
+										class="h-full {strength.color} transition-all duration-300"
+										style="width: {strength.width}"
+									></div>
+								</div>
+								{#if strength.label}
+									<p class="text-xs font-medium {strength.level === 'strong' ? 'text-green-600' : strength.level === 'medium' ? 'text-yellow-600' : 'text-red-600'}">
+										{strength.label}
+									</p>
+								{/if}
+							</div>
+						{/if}
 					</div>
 
 					{#if isSignUp}

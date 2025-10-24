@@ -36,7 +36,7 @@
 	}
 </script>
 
-<div class="container mx-auto p-6 max-w-2xl">
+<div class="container mx-auto p-6 max-w-6xl">
 	<Header onLogout={handleLogout} />
 
 	{#if gameStore.error}
@@ -45,25 +45,33 @@
 		</Alert.Root>
 	{/if}
 
-	<PriceDisplay
-		currentPrice={gameStore.currentPrice}
-		priceLastUpdated={gameStore.priceLastUpdated}
-	/>
+	<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+		<!-- Left column: Main game area (2/3 width on md+) -->
+		<div class="md:col-span-2 space-y-4">
+			<PriceDisplay
+				currentPrice={gameStore.currentPrice}
+				priceLastUpdated={gameStore.priceLastUpdated}
+			/>
 
-	<ScoreCard score={gameStore.score} />
+			<ScoreCard score={gameStore.score} />
 
-	{#if gameStore.hasActiveGuess}
-		<ActiveGuess
-			guess={gameStore.activeGuess}
-			timeUntilResolution={gameStore.timeUntilResolution}
-		/>
-	{/if}
+			{#if gameStore.hasActiveGuess}
+				<ActiveGuess
+					guess={gameStore.activeGuess}
+					timeUntilResolution={gameStore.timeUntilResolution}
+				/>
+			{/if}
 
-	<GuessButtons
-		onGuess={handleGuess}
-		disabled={gameStore.hasActiveGuess}
-		isLoading={gameStore.isLoading}
-	/>
+			<GuessButtons
+				onGuess={handleGuess}
+				disabled={gameStore.hasActiveGuess}
+				isLoading={gameStore.isLoading}
+			/>
+		</div>
 
-	<GuessHistory history={gameStore.guessHistory} />
+		<!-- Right column: Guess history (1/3 width on md+) -->
+		<div class="md:col-span-1">
+			<GuessHistory history={gameStore.guessHistory} />
+		</div>
+	</div>
 </div>

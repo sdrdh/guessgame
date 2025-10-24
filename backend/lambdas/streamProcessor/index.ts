@@ -80,10 +80,17 @@ async function handleGuessResolution(item: any): Promise<void> {
   // Extract userId from PK (format: USER#<userId>)
   const userId = item.PK.replace('USER#', '');
 
+  // Default to BTCUSD if instrument field is missing (for backwards compatibility with old records)
+  const instrument = item.instrument || 'BTCUSD';
+
+  if (!item.instrument) {
+    console.warn(`⚠️  Guess ${item.guessId} missing instrument field, defaulting to BTCUSD`);
+  }
+
   const guess: Guess = {
     guessId: item.guessId,
     userId: item.userId || userId,
-    instrument: item.instrument,
+    instrument: instrument,
     direction: item.direction,
     startPrice: item.startPrice,
     startTime: item.startTime,
@@ -101,7 +108,7 @@ async function handleGuessResolution(item: any): Promise<void> {
     guess: {
       guessId: guess.guessId,
       userId: userId,
-      instrument: guess.instrument,
+      instrument: instrument, // Use the validated instrument value
       direction: guess.direction,
       startPrice: guess.startPrice,
       startTime: guess.startTime,

@@ -100,6 +100,7 @@ export class ApiStack extends cdk.Stack {
         {
           "guessId": "$guess.guessId",
           "userId": "$guess.userId",
+          "instrument": "$guess.instrument",
           "direction": "$guess.direction",
           "startPrice": $guess.startPrice,
           "startTime": $guess.startTime,

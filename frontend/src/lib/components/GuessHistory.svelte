@@ -1,5 +1,6 @@
 <script lang="ts">
 	import * as Card from '$lib/components/ui/card';
+	import { fly } from 'svelte/transition';
 
 	interface GuessHistoryItem {
 		guessId: string;
@@ -27,7 +28,7 @@
 	}
 </script>
 
-<Card.Root class="mt-4">
+<Card.Root>
 	<Card.Header>
 		<Card.Title>Recent Guesses</Card.Title>
 	</Card.Header>
@@ -36,7 +37,10 @@
 			<div class="space-y-3">
 				{#each history as guess (guess.guessId)}
 					{#if guess.resolved && guess.endPrice}
-						<div class="flex items-center justify-between p-3 rounded-lg {guess.correct ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}">
+						<div
+							class="flex items-center justify-between p-3 rounded-lg {guess.correct ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}"
+							in:fly={{ y: -20, duration: 300 }}
+						>
 							<div class="flex items-center gap-3">
 								<div>
 									<div class="text-xs text-muted-foreground font-medium">

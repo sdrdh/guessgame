@@ -33,6 +33,7 @@
 		"vite": "^7.1.7"
 	},
 	"dependencies": {
-		"aws-amplify": "^6.15.7"
+		"aws-amplify": "^6.15.7",
+		"lucide-svelte": "^0.546.0"
 	}
 }
