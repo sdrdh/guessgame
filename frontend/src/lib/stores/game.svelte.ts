@@ -1,6 +1,6 @@
 import { graphqlClient, queries, mutations, subscriptions, type User, type Guess, type Price, Direction } from '$lib/graphql-client';
 import { fetchAuthSession, getCurrentUser } from 'aws-amplify/auth';
-import { fetchBTCPrice } from '$lib/services/coingecko';
+import { fetchBTCPrice } from '$lib/services/coinbase';
 
 // Game state using Svelte 5 runes
 class GameStore {

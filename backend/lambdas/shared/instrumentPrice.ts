@@ -17,11 +17,10 @@ export async function getCurrentInstrumentPrice(instrument: string = 'BTCUSD'): 
     return cachedPrice.price;
   }
 
-  // Fetch from CoinGecko
-  logger.info('Cache miss - fetching from CoinGecko', { instrument });
+  // Fetch from Coinbase
+  logger.info('Cache miss - fetching from Coinbase', { instrument });
   tracer.putAnnotation('priceCacheHit', false);
-  const [coinId, currency] = instrument === 'BTCUSD' ? ['bitcoin', 'usd'] : ['bitcoin', 'usd'];
-  const price = await fetchFromCoinGecko(coinId, currency);
+  const price = await fetchFromCoinbase(instrument);
 
   // Store in cache
   await storePrice(instrument, price);
@@ -55,17 +54,20 @@ async function getCachedPrice(instrument: string): Promise<{ price: number; time
   }
 }
 
-async function fetchFromCoinGecko(coinId: string, currency: string): Promise<number> {
+async function fetchFromCoinbase(instrument: string): Promise<number> {
+  // Map instrument to Coinbase pair format (e.g., BTCUSD -> BTC-USD)
+  const pair = instrument === 'BTCUSD' ? 'BTC-USD' : 'BTC-USD';
+
   const response = await fetch(
-    `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=${currency}&precision=2`
+    `https://api.coinbase.com/v2/prices/${pair}/spot`
   );
 
   if (!response.ok) {
-    throw new Error(`CoinGecko API error: ${response.statusText}`);
+    throw new Error(`Coinbase API error: ${response.statusText}`);
   }
 
   const data: any = await response.json();
-  return data[coinId][currency];
+  return parseFloat(data.data.amount);
 }
 
 async function storePrice(instrument: string, price: number): Promise<void> {
@@ -80,7 +82,7 @@ async function storePrice(instrument: string, price: number): Promise<void> {
         entityType: 'PRICE',
         price,
         timestamp,
-        source: 'coingecko',
+        source: 'coinbase',
         ttl: Math.floor(timestamp / 1000) + (7 * 24 * 60 * 60) // 7 days
       }
     }));
