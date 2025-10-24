@@ -3,6 +3,7 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
 import * as path from 'path';
+import * as fs from 'fs';
 
 export class FrontendStack extends cdk.Stack {
   public readonly bucket: s3.Bucket;
@@ -30,13 +31,23 @@ export class FrontendStack extends cdk.Stack {
       autoDeleteObjects: true,
     });
 
-    // Deploy pre-built frontend to S3
+    // Deploy pre-built frontend to S3 (only if build directory exists)
     const frontendBuildDir = path.join(__dirname, '../../../frontend/build');
 
-    new s3deploy.BucketDeployment(this, 'DeployFrontend', {
-      sources: [s3deploy.Source.asset(frontendBuildDir)],
-      destinationBucket: this.bucket,
-    });
+    // Check if build directory exists before creating deployment
+    // This allows backend stacks to be synthesized without frontend build
+    if (fs.existsSync(frontendBuildDir)) {
+      new s3deploy.BucketDeployment(this, 'DeployFrontend', {
+        sources: [s3deploy.Source.asset(frontendBuildDir)],
+        destinationBucket: this.bucket,
+      });
+    } else {
+      // Add a note in the stack that deployment is skipped
+      new cdk.CfnOutput(this, 'DeploymentStatus', {
+        value: 'Skipped - build directory not found. Run prepare-frontend.js first.',
+        description: 'Frontend deployment status',
+      });
+    }
 
     // Website URL
     this.websiteUrl = this.bucket.bucketWebsiteUrl;
