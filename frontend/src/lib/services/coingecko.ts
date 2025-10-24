@@ -1,19 +1,20 @@
-// CoinGecko API service for fetching BTC price
-export interface CoinGeckoPrice {
-  bitcoin: {
-    usd: number;
+// Coinbase API service for fetching BTC price (CORS-friendly)
+export interface CoinbasePrice {
+  data: {
+    amount: string;
+    currency: string;
   };
 }
 
 export async function fetchBTCPrice(): Promise<number> {
   const response = await fetch(
-    'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd'
+    'https://api.coinbase.com/v2/prices/BTC-USD/spot'
   );
 
   if (!response.ok) {
-    throw new Error(`CoinGecko API error: ${response.statusText}`);
+    throw new Error(`Coinbase API error: ${response.statusText}`);
   }
 
-  const data: CoinGeckoPrice = await response.json();
-  return data.bitcoin.usd;
+  const data: CoinbasePrice = await response.json();
+  return parseFloat(data.data.amount);
 }

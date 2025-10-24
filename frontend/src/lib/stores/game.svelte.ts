@@ -80,7 +80,7 @@ class GameStore {
       // Start time interval for countdown updates
       this.startTimeInterval();
 
-      // Start price fetching from CoinGecko (baseline updates every 15s)
+      // Start price fetching from Coinbase (baseline updates every 15s)
       this.startPriceInterval();
 
       // Load user profile (won't throw, just sets error if fails)
@@ -116,29 +116,29 @@ class GameStore {
     }, 1000);
   }
 
-  // Fetch price from CoinGecko
-  private async fetchPriceFromCoinGecko() {
+  // Fetch price from Coinbase
+  private async fetchPriceFromCoinbase() {
     try {
       const price = await fetchBTCPrice();
       this.currentPrice = price;
       this.priceTimestamp = Math.floor(Date.now() / 1000);
-      console.log('✅ CoinGecko price updated:', price);
+      console.log('✅ Coinbase price updated:', price);
     } catch (err) {
-      console.error('❌ Failed to fetch price from CoinGecko:', err);
+      console.error('❌ Failed to fetch price from Coinbase:', err);
       // AppSync subscription will continue to provide updates
     }
   }
 
-  // Start interval to fetch price from CoinGecko every 15 seconds
+  // Start interval to fetch price from Coinbase every 15 seconds
   private startPriceInterval() {
     if (typeof window === 'undefined') return;
 
     // Fetch immediately
-    this.fetchPriceFromCoinGecko();
+    this.fetchPriceFromCoinbase();
 
     // Then fetch every 15 seconds
     this.priceInterval = setInterval(() => {
-      this.fetchPriceFromCoinGecko();
+      this.fetchPriceFromCoinbase();
     }, 15000); // 15 seconds
   }
 
