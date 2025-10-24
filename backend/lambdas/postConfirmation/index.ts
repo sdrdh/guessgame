@@ -46,7 +46,7 @@ const lambdaHandler = async (
       success: true
     });
   } catch (error) {
-    logger.error('Error creating user profile', error as Error, { userId });
+    logger.error('Error creating user profile', { error, userId });
     // Don't throw error - this would prevent user confirmation
     // The user can still be created later if needed
 
