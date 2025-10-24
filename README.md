@@ -2,6 +2,12 @@
 
 A real-time Bitcoin price guessing game built with SvelteKit and AWS serverless architecture.
 
+## Documentation
+
+- **[CLAUDE.md](CLAUDE.md)** - Quick reference for Claude Code (architecture overview, key patterns, workflows)
+- **[backend/DEVELOPMENT.md](backend/DEVELOPMENT.md)** - Complete backend development guide (CDK, Lambda, DynamoDB, GraphQL)
+- **[frontend/DEVELOPMENT.md](frontend/DEVELOPMENT.md)** - Complete frontend development guide (Svelte 5, state management, GraphQL)
+
 ## Overview
 
 Players guess whether the Bitcoin price will go UP or DOWN. After 60 seconds, the guess is resolved and players earn points for correct predictions.
@@ -19,6 +25,8 @@ Players guess whether the Bitcoin price will go UP or DOWN. After 60 seconds, th
 - S3 + CloudFlare deployment for production hosting (no CloudFront needed!)
 
 ## Architecture
+
+![Bitcoin Guessing Game Architecture](architecture.png)
 
 ### Frontend
 - **Framework**: SvelteKit with Svelte 5
@@ -77,15 +85,22 @@ After deployment, you'll see outputs including:
 
 ### Configure CloudFlare
 
-After deploying, set up your custom domain:
+After deploying, set up your custom domain with CloudFlare DNS:
 
-See [CLOUDFLARE_SETUP.md](CLOUDFLARE_SETUP.md) for detailed instructions.
+1. **Add CNAME Record**: CloudFlare Dashboard → DNS → Records
+   - Type: CNAME
+   - Name: `guessgame` (or your subdomain)
+   - Target: Your S3 website endpoint (from CDK output)
+   - Proxy Status: Proxied (orange cloud) ✅
 
-**Quick summary:**
-1. Add CNAME in CloudFlare pointing to S3 website endpoint
-2. Enable Proxy (orange cloud)
-3. Set SSL/TLS to "Full"
-4. Done! Free SSL, CDN, and security included
+2. **SSL/TLS Settings**: CloudFlare Dashboard → SSL/TLS
+   - Set to **Full** (not Flexible or Full Strict)
+
+3. **Test**: Visit `https://yourdomain.com` - should load with HTTPS
+
+**Benefits**: Free SSL certificate, CDN caching, DDoS protection, and WAF
+
+**Cost**: ~$0.50/month (S3 only, CloudFlare is free)
 
 ### Manual Frontend Development
 
