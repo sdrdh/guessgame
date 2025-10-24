@@ -45,4 +45,6 @@ coverage/
 *.js
 *.d.ts
 !jest.config.js
+!backend/scripts/**/*.js
 tsconfig.tsbuildinfo
+cdk-outputs.json

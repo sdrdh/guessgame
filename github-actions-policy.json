@@ -1,0 +1,26 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "cloudformation:*",
+        "s3:*",
+        "dynamodb:*",
+        "lambda:*",
+        "cognito-idp:*",
+        "appsync:*",
+        "sqs:*",
+        "iam:*",
+        "logs:*",
+        "ssm:GetParameter",
+        "sts:AssumeRole",
+        "ec2:DescribeAvailabilityZones",
+        "ec2:DescribeVpcs",
+        "ec2:DescribeSubnets",
+        "ec2:DescribeSecurityGroups"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

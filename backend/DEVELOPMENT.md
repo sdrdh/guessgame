@@ -114,6 +114,165 @@ DynamoDB change → Streams → streamProcessor → AppSync mutations → Fronte
 npm test -- -t "test pattern"
 ```
 
+## Deployment
+
+### Local Deployment
+
+#### Deploy to Development
+
+```bash
+cd backend
+
+# Deploy backend stacks
+npm run deploy:backend -- \
+  --context environmentTag=dev \
+  --context domainName=guessgame.dev.sdrdhlab.xyz
+
+# Deploy frontend (builds automatically with backend outputs)
+npm run deploy:frontend -- \
+  --context environmentTag=dev \
+  --context domainName=guessgame.dev.sdrdhlab.xyz
+
+# Or deploy everything at once
+npm run deploy -- \
+  --context environmentTag=dev \
+  --context domainName=guessgame.dev.sdrdhlab.xyz
+```
+
+**Stack names**: `GuessGame-dev-DatabaseStack`, `GuessGame-dev-AuthStack`, etc.
+
+#### Deploy to Production
+
+```bash
+cd backend
+
+# Deploy everything
+npm run deploy -- \
+  --context environmentTag=prod \
+  --context domainName=guessgame.sdrdhlab.xyz
+```
+
+**Stack names**: `GuessGame-DatabaseStack`, `GuessGame-AuthStack`, etc.
+
+#### Frontend-Only Deployment
+
+After backend is deployed, you can redeploy just the frontend:
+
+```bash
+cd backend
+npm run deploy:frontend -- \
+  --context environmentTag=dev \
+  --context domainName=guessgame.dev.sdrdhlab.xyz
+```
+
+This will:
+1. Read `cdk-outputs.json` from previous backend deployment
+2. Generate `frontend/.env` with AWS configuration
+3. Run `npm ci && npm run build` in frontend directory
+4. Deploy to S3
+
+### Environment-Based Stack Naming
+
+Stack names are automatically prefixed based on `environmentTag`:
+
+| Environment | Stack Prefix | Example |
+|-------------|--------------|---------|
+| `prod` | `GuessGame-` | `GuessGame-DatabaseStack` |
+| `dev` | `GuessGame-dev-` | `GuessGame-dev-DatabaseStack` |
+| `staging` | `GuessGame-staging-` | `GuessGame-staging-DatabaseStack` |
+
+This allows multiple environments to coexist in the same AWS account.
+
+### Default Context Values
+
+Default values in [cdk.json](cdk.json):
+```json
+{
+  "environmentTag": "dev",
+  "domainName": "guessgame.dev.sdrdhlab.xyz"
+}
+```
+
+Override via command line: `--context environmentTag=prod`
+
+## CI/CD with GitHub Actions
+
+### Workflow Overview
+
+Automated deployment via GitHub Actions: [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml)
+
+**Branch-based deployment**:
+- Push to `main` → deploys to **prod** (`guessgame.sdrdhlab.xyz`)
+- Push to `dev` → deploys to **dev** (`guessgame.dev.sdrdhlab.xyz`)
+
+**Manual deployment**:
+- GitHub Actions → **Run workflow** → Select environment
+
+### Workflow Steps
+
+1. **Checkout** code
+2. **Setup** Node.js with npm caching
+3. **Configure** AWS credentials via OIDC (no long-lived secrets!)
+4. **Install** dependencies
+5. **Build** TypeScript
+6. **Test** all 67 backend tests
+7. **Deploy backend** (6 stacks with `--outputs-file cdk-outputs.json`)
+8. **Build frontend** (runs `scripts/prepare-frontend.js`)
+9. **Deploy frontend** to S3
+10. **Output** CloudFlare CNAME configuration
+
+### What Gets Deployed
+
+**Backend stacks** (with environment prefix):
+```bash
+GuessGame[-{env}]-DatabaseStack
+GuessGame[-{env}]-QueueStack
+GuessGame[-{env}]-ComputeStack
+GuessGame[-{env}]-AuthStack
+GuessGame[-{env}]-ApiStack
+GuessGame[-{env}]-IntegrationStack
+GuessGame[-{env}]-FrontendStack
+```
+
+**Frontend build process**:
+1. `scripts/prepare-frontend.js` reads `cdk-outputs.json`
+2. Extracts `UserPoolId`, `UserPoolClientId`, `ApiUrl`
+3. Writes `frontend/.env`:
+   ```env
+   VITE_COGNITO_USER_POOL_ID=ap-south-1_XXXXXXXXX
+   VITE_COGNITO_USER_POOL_CLIENT_ID=XXXXXXXXXXXXXXXXXXXXXXXXXX
+   VITE_APPSYNC_ENDPOINT=https://XXXXX.appsync-api.ap-south-1.amazonaws.com/graphql
+   VITE_AWS_REGION=ap-south-1
+   VITE_APPSYNC_REGION=ap-south-1
+   ```
+4. Runs `npm ci && npm run build`
+5. CDK deploys `frontend/build` to S3
+
+### CloudFlare Configuration
+
+Workflow outputs S3 website endpoint for CloudFlare CNAME:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 CloudFlare DNS Configuration:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Type:    CNAME
+  Name:    guessgame (or guessgame.dev)
+  Target:  guessgame.sdrdhlab.xyz.s3-website.ap-south-1.amazonaws.com
+  Proxy:   ON (orange cloud)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### Setup
+
+See [GITHUB_ACTIONS_SETUP.md](../GITHUB_ACTIONS_SETUP.md) for:
+- AWS OIDC provider setup
+- IAM role creation
+- GitHub Secrets configuration
+- Troubleshooting
+
 ## Troubleshooting
 
 **CDK fails**: Run `aws configure`

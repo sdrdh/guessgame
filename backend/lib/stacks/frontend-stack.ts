@@ -11,7 +11,8 @@ export class FrontendStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const domainName = 'guessgame.sdrdhlab.xyz';
+    const domainName = this.node.tryGetContext('domainName') || 'guessgame.sdrdhlab.xyz';
+    const environmentTag = this.node.tryGetContext('environmentTag') || 'dev';
 
     // S3 Bucket for static website hosting (named after domain for CloudFlare)
     this.bucket = new s3.Bucket(this, 'FrontendBucket', {
@@ -60,5 +61,9 @@ export class FrontendStack extends cdk.Stack {
       value: `Add CNAME: guessgame -> ${this.bucket.bucketWebsiteDomainName} (Proxy: ON)`,
       description: 'CloudFlare Setup Instructions',
     });
+
+    // Apply tags
+    cdk.Tags.of(this).add('Project', 'GuessGame');
+    cdk.Tags.of(this).add('Environment', environmentTag);
   }
 }

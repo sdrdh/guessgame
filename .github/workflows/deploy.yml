@@ -1,0 +1,158 @@
+name: Deploy GuessGame
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+
+permissions:
+  id-token: write   # Required for OIDC authentication
+  contents: read    # Required to checkout code
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    # Set environment based on branch or manual input
+    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev') }}
+
+    env:
+      AWS_REGION: ap-south-1
+      NODE_VERSION: '20'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Configure environment variables
+        id: config
+        run: |
+          if [ "${{ github.event.inputs.environment }}" != "" ]; then
+            ENV="${{ github.event.inputs.environment }}"
+          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            ENV="prod"
+          else
+            ENV="dev"
+          fi
+
+          echo "ENVIRONMENT=$ENV" >> $GITHUB_OUTPUT
+
+          if [ "$ENV" == "prod" ]; then
+            echo "DOMAIN_NAME=guessgame.sdrdhlab.xyz" >> $GITHUB_OUTPUT
+            echo "STACK_PREFIX=GuessGame" >> $GITHUB_OUTPUT
+          else
+            echo "DOMAIN_NAME=guessgame.dev.sdrdhlab.xyz" >> $GITHUB_OUTPUT
+            echo "STACK_PREFIX=GuessGame-dev" >> $GITHUB_OUTPUT
+          fi
+
+          echo "🚀 Deploying to: $ENV"
+          echo "🌐 Domain: $([ "$ENV" == "prod" ] && echo "guessgame.sdrdhlab.xyz" || echo "guessgame.dev.sdrdhlab.xyz")"
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-${{ github.run_id }}
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          npm ci
+
+      - name: Build backend (TypeScript)
+        run: |
+          cd backend
+          npm run build
+
+      - name: Run backend tests
+        run: |
+          cd backend
+          npm test
+
+      - name: Deploy backend stacks
+        run: |
+          cd backend
+          npx cdk deploy \
+            ${{ steps.config.outputs.STACK_PREFIX }}-DatabaseStack \
+            ${{ steps.config.outputs.STACK_PREFIX }}-QueueStack \
+            ${{ steps.config.outputs.STACK_PREFIX }}-ComputeStack \
+            ${{ steps.config.outputs.STACK_PREFIX }}-AuthStack \
+            ${{ steps.config.outputs.STACK_PREFIX }}-ApiStack \
+            ${{ steps.config.outputs.STACK_PREFIX }}-IntegrationStack \
+            --require-approval never \
+            --outputs-file cdk-outputs.json \
+            --context environmentTag=${{ steps.config.outputs.ENVIRONMENT }} \
+            --context domainName=${{ steps.config.outputs.DOMAIN_NAME }}
+
+      - name: Prepare and deploy frontend
+        run: |
+          cd backend
+          npm run deploy:frontend -- \
+            --require-approval never \
+            --context environmentTag=${{ steps.config.outputs.ENVIRONMENT }} \
+            --context domainName=${{ steps.config.outputs.DOMAIN_NAME }}
+
+      - name: Extract deployment outputs
+        id: outputs
+        run: |
+          cd backend
+
+          # Extract S3 website endpoint from CDK outputs
+          FRONTEND_STACK="${{ steps.config.outputs.STACK_PREFIX }}-FrontendStack"
+          S3_ENDPOINT=$(node -e "
+            const outputs = require('./cdk-outputs.json');
+            const frontendStack = outputs['$FRONTEND_STACK'];
+            console.log(frontendStack?.WebsiteEndpoint || 'Not found');
+          ")
+
+          echo "S3_ENDPOINT=$S3_ENDPOINT" >> $GITHUB_OUTPUT
+          echo "FRONTEND_STACK=$FRONTEND_STACK" >> $GITHUB_OUTPUT
+
+      - name: Display CloudFlare setup instructions
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ Deployment Complete!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "📋 CloudFlare DNS Configuration:"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "  Type:    CNAME"
+          echo "  Name:    $([ "${{ steps.config.outputs.ENVIRONMENT }}" == "prod" ] && echo "guessgame" || echo "guessgame.dev")"
+          echo "  Target:  ${{ steps.outputs.S3_ENDPOINT }}"
+          echo "  Proxy:   ON (orange cloud)"
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "🌐 Your site will be available at: https://${{ steps.config.outputs.DOMAIN_NAME }}"
+          echo "🏗️  Environment: ${{ steps.config.outputs.ENVIRONMENT }}"
+          echo "📍 Region: ${{ env.AWS_REGION }}"
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: Upload CDK outputs as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cdk-outputs-${{ steps.config.outputs.ENVIRONMENT }}
+          path: backend/cdk-outputs.json
+          retention-days: 30
