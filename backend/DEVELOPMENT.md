@@ -74,7 +74,7 @@ See: [lambdas/shared/db.ts](lambdas/shared/db.ts)
 
 **Price Caching**:
 - Cache TTL: 5 seconds
-- Check DynamoDB before CoinGecko API
+- Check DynamoDB before Coinbase API
 - Reduces API calls, enables concurrent resolution
 
 **Real-time Updates**:

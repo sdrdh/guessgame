@@ -164,7 +164,7 @@ Comparable cost, but SQS's requeue pattern is more natural for our retry logic.
 **Architecture (Not Implemented):**
 ```
 Fargate/ECS Container:
-├── WebSocket connection to CoinGecko/Binance API
+├── WebSocket connection to Coinbase/Binance API
 ├── Receive price updates every 1-5 seconds
 └── Write to DynamoDB (INSTRUMENT#BITCOIN, TIMESTAMP#<timestamp>)
 
@@ -220,7 +220,7 @@ T+65s: resolveGuess checks price, compares T+0s vs T+65s, might miss T+62s chang
 - Most common during off-peak hours (late night, weekends)
 
 **Current Mitigations:**
-- Frontend polls CoinGecko every 15 seconds (provides price continuity)
+- Frontend polls Coinbase every 15 seconds (provides price continuity)
 - AppSync subscription pushes price updates to frontend (`onPriceUpdated`)
 - 5-second cache TTL in [instrumentPrice.ts](./backend/lambdas/shared/instrumentPrice.ts) encourages frequent price refreshes
 - `resolveGuess` requeues with 5-second delay (12 retries per minute = high chance of hitting cache)
@@ -279,7 +279,7 @@ const price = await getLatestInstrumentPrice(instrument);
 ```
 
 **Benefits:**
-- Eliminates price fetch latency in Lambda (no CoinGecko API calls)
+- Eliminates price fetch latency in Lambda (no Coinbase API calls)
 - Reduces SQS retries due to missing price data (fixes Issue #1)
 - Enables sub-second price granularity (useful if guess resolution time decreases)
 - Single source of truth for all price data
@@ -358,7 +358,7 @@ const { direction, instrument = 'BTCUSD' } = event.arguments;
 
 **Dependencies:**
 - Ideally implemented with 5a (Fargate price fetcher) for scalability
-- Without 5a: Multiple CoinGecko API calls per guess (slower, rate limit risk)
+- Without 5a: Multiple Coinbase API calls per guess (slower, rate limit risk)
 
 **Priority:** Low (unless user demand exists). Infrastructure is ready, just needs parameter exposure.
 

@@ -86,9 +86,9 @@ describe('createGuess Lambda', () => {
         updatedAt: 1704067200
       });
       mockGetActiveGuess.mockResolvedValue(null);
-      mockGetCurrentInstrumentPrice.mockRejectedValue(new Error('CoinGecko API error'));
+      mockGetCurrentInstrumentPrice.mockRejectedValue(new Error('Coinbase API error'));
 
-      await expect(handler(event, context)).rejects.toThrow('CoinGecko API error');
+      await expect(handler(event, context)).rejects.toThrow('Coinbase API error');
     });
   });
 

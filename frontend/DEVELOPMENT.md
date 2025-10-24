@@ -102,7 +102,7 @@ graphqlClient.graphql({
 
 Frontend gets prices from **two sources**:
 
-1. **CoinGecko direct** (every 15s) - Baseline, fallback
+1. **Coinbase direct** (every 15s) - Baseline, fallback
 2. **AppSync subscription** (real-time) - Low latency
 
 Why: Redundancy + consistency across users.
@@ -193,4 +193,4 @@ src/
 **Amplify not configured**: Check `aws-config.ts` and `+layout.svelte`
 **GraphQL unauthorized**: Verify JWT token and auth mode
 **Subscriptions not working**: Check AppSync endpoint and credentials
-**Price stuck**: Check CoinGecko API accessibility
+**Price stuck**: Check Coinbase API accessibility

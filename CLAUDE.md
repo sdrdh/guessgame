@@ -95,7 +95,7 @@ Full details: [backend/DEVELOPMENT.md#2-resolveguess](backend/DEVELOPMENT.md#2-r
 
 All price fetches go through [backend/lambdas/shared/instrumentPrice.ts](backend/lambdas/shared/instrumentPrice.ts):
 - Cache-first: Check DynamoDB for price < 5s old
-- On miss: Fetch from CoinGecko and store in DynamoDB
+- On miss: Fetch from Coinbase and store in DynamoDB
 - Historical lookup: Range queries on timestamp-based SK
 
 Benefits: Reduces API calls, enables concurrent guess resolution.
@@ -117,7 +117,7 @@ Full details: [backend/DEVELOPMENT.md#6-streamprocessor](backend/DEVELOPMENT.md#
 ### Dual Price Updates (Frontend)
 
 Frontend receives prices from **two sources**:
-1. **CoinGecko direct** (every 15s) - Baseline, continues if AppSync fails
+1. **Coinbase direct** (every 15s) - Baseline, continues if AppSync fails
 2. **AppSync subscription** (real-time) - Pushed from backend, lower latency
 
 Why both: Redundancy + consistency.
@@ -183,4 +183,4 @@ frontend/
 **Why SQS instead of EventBridge?** [backend/DEVELOPMENT.md#why-sqs-instead-of-eventbridge-scheduler](backend/DEVELOPMENT.md#why-sqs-instead-of-eventbridge-scheduler)
 **Why single table?** [backend/DEVELOPMENT.md#why-single-table-instead-of-multiple-tables](backend/DEVELOPMENT.md#why-single-table-instead-of-multiple-tables)
 **Why Svelte 5?** [frontend/DEVELOPMENT.md#why-svelte-5-instead-of-react](frontend/DEVELOPMENT.md#why-svelte-5-instead-of-react)
-**Why dual price updates?** [frontend/DEVELOPMENT.md#why-dual-price-updates-coingecko--appsync](frontend/DEVELOPMENT.md#why-dual-price-updates-coingecko--appsync)
+**Why dual price updates?** [frontend/DEVELOPMENT.md#why-dual-price-updates-coinbase--appsync](frontend/DEVELOPMENT.md#why-dual-price-updates-coinbase--appsync)
