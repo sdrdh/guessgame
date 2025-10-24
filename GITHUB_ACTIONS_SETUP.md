@@ -304,7 +304,7 @@ Running both dev and prod environments:
 
 **To minimize costs**:
 - Delete dev stacks when not actively developing
-- Use `npx cdk destroy GuessGame-dev-*` to remove dev environment
+- Use `npx cdk destroy 'GuessGameDev*'` to remove dev environment
 - Monitor with AWS Cost Explorer
 
 ---

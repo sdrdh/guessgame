@@ -54,16 +54,22 @@ function main() {
 
   // Try to detect environment from stack names in outputs
   const stackNames = Object.keys(outputs);
-  let stackPrefix = 'GuessGame-';
+  let stackPrefix = 'GuessGame';
+  let environment = 'prod';
 
-  // Check if we have dev stacks (GuessGame-dev-) or prod stacks (GuessGame-)
-  if (stackNames.some(name => name.includes('GuessGame-dev-'))) {
-    stackPrefix = 'GuessGame-dev-';
-    log('  Environment: dev', 'blue');
+  // Check if we have dev stacks (GuessGameDev*) or other environments
+  if (stackNames.some(name => name.startsWith('GuessGameDev'))) {
+    stackPrefix = 'GuessGameDev';
+    environment = 'dev';
+  } else if (stackNames.some(name => name.startsWith('GuessGameStaging'))) {
+    stackPrefix = 'GuessGameStaging';
+    environment = 'staging';
   } else {
-    stackPrefix = 'GuessGame-';
-    log('  Environment: prod', 'blue');
+    stackPrefix = 'GuessGame';
+    environment = 'prod';
   }
+
+  log(`  Environment: ${environment}`, 'blue');
 
   const authStackName = `${stackPrefix}AuthStack`;
   const apiStackName = `${stackPrefix}ApiStack`;

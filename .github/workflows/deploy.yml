@@ -61,7 +61,9 @@ jobs:
             echo "STACK_PREFIX=GuessGame" >> $GITHUB_OUTPUT
           else
             echo "DOMAIN_NAME=guessgame.dev.sdrdhlab.xyz" >> $GITHUB_OUTPUT
-            echo "STACK_PREFIX=GuessGame-dev" >> $GITHUB_OUTPUT
+            # Capitalize first letter: dev -> Dev, staging -> Staging
+            ENV_CAPITALIZED="$(echo "$ENV" | sed 's/./\U&/')"
+            echo "STACK_PREFIX=GuessGame${ENV_CAPITALIZED}" >> $GITHUB_OUTPUT
           fi
 
           echo "🚀 Deploying to: $ENV"
@@ -89,16 +91,21 @@ jobs:
           cd backend
           npm test
 
+      - name: Bootstrap CDK (idempotent, safe to run multiple times)
+        run: |
+          cd backend
+          npx cdk bootstrap --context environmentTag=${{ steps.config.outputs.ENVIRONMENT }}
+
       - name: Deploy backend stacks
         run: |
           cd backend
           npx cdk deploy \
-            ${{ steps.config.outputs.STACK_PREFIX }}-DatabaseStack \
-            ${{ steps.config.outputs.STACK_PREFIX }}-QueueStack \
-            ${{ steps.config.outputs.STACK_PREFIX }}-ComputeStack \
-            ${{ steps.config.outputs.STACK_PREFIX }}-AuthStack \
-            ${{ steps.config.outputs.STACK_PREFIX }}-ApiStack \
-            ${{ steps.config.outputs.STACK_PREFIX }}-IntegrationStack \
+            ${{ steps.config.outputs.STACK_PREFIX }}DatabaseStack \
+            ${{ steps.config.outputs.STACK_PREFIX }}QueueStack \
+            ${{ steps.config.outputs.STACK_PREFIX }}ComputeStack \
+            ${{ steps.config.outputs.STACK_PREFIX }}AuthStack \
+            ${{ steps.config.outputs.STACK_PREFIX }}ApiStack \
+            ${{ steps.config.outputs.STACK_PREFIX }}IntegrationStack \
             --require-approval never \
             --outputs-file cdk-outputs.json \
             --context environmentTag=${{ steps.config.outputs.ENVIRONMENT }} \
@@ -108,7 +115,7 @@ jobs:
         run: |
           cd backend
           node scripts/prepare-frontend.js
-          npx cdk deploy ${{ steps.config.outputs.STACK_PREFIX }}-FrontendStack \
+          npx cdk deploy ${{ steps.config.outputs.STACK_PREFIX }}FrontendStack \
             --require-approval never \
             --context environmentTag=${{ steps.config.outputs.ENVIRONMENT }} \
             --context domainName=${{ steps.config.outputs.DOMAIN_NAME }}
@@ -119,7 +126,7 @@ jobs:
           cd backend
 
           # Extract S3 website endpoint from CDK outputs
-          FRONTEND_STACK="${{ steps.config.outputs.STACK_PREFIX }}-FrontendStack"
+          FRONTEND_STACK="${{ steps.config.outputs.STACK_PREFIX }}FrontendStack"
           S3_ENDPOINT=$(node -e "
             const outputs = require('./cdk-outputs.json');
             const frontendStack = outputs['$FRONTEND_STACK'];

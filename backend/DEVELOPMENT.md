@@ -139,7 +139,7 @@ npm run deploy -- \
   --context domainName=guessgame.dev.sdrdhlab.xyz
 ```
 
-**Stack names**: `GuessGame-dev-DatabaseStack`, `GuessGame-dev-AuthStack`, etc.
+**Stack names**: `GuessGameDevDatabaseStack`, `GuessGameDevAuthStack`, etc.
 
 #### Deploy to Production
 
@@ -152,7 +152,7 @@ npm run deploy -- \
   --context domainName=guessgame.sdrdhlab.xyz
 ```
 
-**Stack names**: `GuessGame-DatabaseStack`, `GuessGame-AuthStack`, etc.
+**Stack names**: `GuessGameDatabaseStack`, `GuessGameAuthStack`, etc.
 
 #### Frontend-Only Deployment
 
@@ -177,9 +177,9 @@ Stack names are automatically prefixed based on `environmentTag`:
 
 | Environment | Stack Prefix | Example |
 |-------------|--------------|---------|
-| `prod` | `GuessGame-` | `GuessGame-DatabaseStack` |
-| `dev` | `GuessGame-dev-` | `GuessGame-dev-DatabaseStack` |
-| `staging` | `GuessGame-staging-` | `GuessGame-staging-DatabaseStack` |
+| `prod` | `GuessGame` | `GuessGameDatabaseStack` |
+| `dev` | `GuessGameDev` | `GuessGameDevDatabaseStack` |
+| `staging` | `GuessGameStaging` | `GuessGameStagingDatabaseStack` |
 
 This allows multiple environments to coexist in the same AWS account.
 
@@ -225,13 +225,13 @@ Automated deployment via GitHub Actions: [`.github/workflows/deploy.yml`](../.gi
 
 **Backend stacks** (with environment prefix):
 ```bash
-GuessGame[-{env}]-DatabaseStack
-GuessGame[-{env}]-QueueStack
-GuessGame[-{env}]-ComputeStack
-GuessGame[-{env}]-AuthStack
-GuessGame[-{env}]-ApiStack
-GuessGame[-{env}]-IntegrationStack
-GuessGame[-{env}]-FrontendStack
+GuessGame[Env]DatabaseStack      # prod: GuessGameDatabaseStack, dev: GuessGameDevDatabaseStack
+GuessGame[Env]QueueStack
+GuessGame[Env]ComputeStack
+GuessGame[Env]AuthStack
+GuessGame[Env]ApiStack
+GuessGame[Env]IntegrationStack
+GuessGame[Env]FrontendStack
 ```
 
 **Frontend build process**:

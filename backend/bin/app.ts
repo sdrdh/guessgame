@@ -19,9 +19,12 @@ const env = {
 const environmentTag = app.node.tryGetContext('environmentTag') || 'dev';
 
 // Generate stack name prefix based on environment
-// prod -> GuessGame-
-// dev -> GuessGame-dev-
-const stackPrefix = environmentTag === 'prod' ? 'GuessGame-' : `GuessGame-${environmentTag}-`;
+// prod -> GuessGame
+// dev -> GuessGameDev
+// staging -> GuessGameStaging
+const stackPrefix = environmentTag === 'prod'
+  ? 'GuessGame'
+  : `GuessGame${environmentTag.charAt(0).toUpperCase() + environmentTag.slice(1)}`;
 
 // Foundation stacks (no dependencies)
 const databaseStack = new DatabaseStack(app, `${stackPrefix}DatabaseStack`, { env });
