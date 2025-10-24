@@ -107,7 +107,8 @@ jobs:
       - name: Prepare and deploy frontend
         run: |
           cd backend
-          npm run deploy:frontend -- \
+          node scripts/prepare-frontend.js
+          npx cdk deploy ${{ steps.config.outputs.STACK_PREFIX }}-FrontendStack \
             --require-approval never \
             --context environmentTag=${{ steps.config.outputs.ENVIRONMENT }} \
             --context domainName=${{ steps.config.outputs.DOMAIN_NAME }}
