@@ -1,5 +1,6 @@
 import { handler } from '../../lambdas/resolveGuess/index';
 import { SQSEvent } from 'aws-lambda';
+import { createMockContext } from '../helpers';
 import * as db from '../../lambdas/shared/db';
 import * as instrumentPrice from '../../lambdas/shared/instrumentPrice';
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
@@ -17,6 +18,7 @@ describe('resolveGuess Lambda', () => {
   const mockGetCurrentInstrumentPrice = instrumentPrice.getCurrentInstrumentPrice as jest.MockedFunction<typeof instrumentPrice.getCurrentInstrumentPrice>;
   const mockUpdateUserScore = db.updateUserScore as jest.MockedFunction<typeof db.updateUserScore>;
   const mockResolveGuess = db.resolveGuess as jest.MockedFunction<typeof db.resolveGuess>;
+  const context = createMockContext();
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -69,7 +71,7 @@ describe('resolveGuess Lambda', () => {
       mockUpdateUserScore.mockResolvedValue(undefined);
       mockResolveGuess.mockResolvedValue(undefined);
 
-      await handler(event);
+      await handler(event, context);
 
       expect(mockFindDifferentPriceAfter).toHaveBeenCalled();
       expect(mockUpdateUserScore).toHaveBeenCalledWith('user-123', 1);
@@ -93,7 +95,7 @@ describe('resolveGuess Lambda', () => {
       mockUpdateUserScore.mockResolvedValue(undefined);
       mockResolveGuess.mockResolvedValue(undefined);
 
-      await handler(event);
+      await handler(event, context);
 
       expect(mockUpdateUserScore).toHaveBeenCalledWith('user-456', -1);
       expect(mockResolveGuess).toHaveBeenCalledWith('user-456', expect.any(Number), 44000, false, -1);
@@ -116,7 +118,7 @@ describe('resolveGuess Lambda', () => {
       mockUpdateUserScore.mockResolvedValue(undefined);
       mockResolveGuess.mockResolvedValue(undefined);
 
-      await handler(event);
+      await handler(event, context);
 
       expect(mockUpdateUserScore).toHaveBeenCalledWith('user-789', 1);
       expect(mockResolveGuess).toHaveBeenCalledWith('user-789', expect.any(Number), 44000, true, 1);
@@ -139,7 +141,7 @@ describe('resolveGuess Lambda', () => {
       mockUpdateUserScore.mockResolvedValue(undefined);
       mockResolveGuess.mockResolvedValue(undefined);
 
-      await handler(event);
+      await handler(event, context);
 
       expect(mockUpdateUserScore).toHaveBeenCalledWith('user-321', -1);
       expect(mockResolveGuess).toHaveBeenCalledWith('user-321', expect.any(Number), 46000, false, -1);
@@ -166,7 +168,7 @@ describe('resolveGuess Lambda', () => {
       const mockSend = jest.fn().mockResolvedValue({});
       (SQSClient.prototype.send as jest.Mock) = mockSend;
 
-      await handler(event);
+      await handler(event, context);
 
       expect(mockSend).toHaveBeenCalledWith(expect.any(SendMessageCommand));
 
@@ -196,7 +198,7 @@ describe('resolveGuess Lambda', () => {
       const mockSend = jest.fn().mockResolvedValue({});
       (SQSClient.prototype.send as jest.Mock) = mockSend;
 
-      await handler(event);
+      await handler(event, context);
 
       // Verify the message was requeued
       expect(mockSend).toHaveBeenCalledWith(expect.any(SendMessageCommand));
@@ -221,7 +223,7 @@ describe('resolveGuess Lambda', () => {
       mockUpdateUserScore.mockResolvedValue(undefined);
       mockResolveGuess.mockResolvedValue(undefined);
 
-      await handler(event);
+      await handler(event, context);
 
       expect(mockUpdateUserScore).toHaveBeenCalledWith('user-123', -1);
       expect(mockResolveGuess).toHaveBeenCalledWith('user-123', expect.any(Number), 45000, false, -1);
@@ -247,7 +249,7 @@ describe('resolveGuess Lambda', () => {
       mockUpdateUserScore.mockResolvedValue(undefined);
       mockResolveGuess.mockResolvedValue(undefined);
 
-      await handler(event);
+      await handler(event, context);
 
       expect(mockGetCurrentInstrumentPrice).toHaveBeenCalledWith('BTCUSD');
       expect(mockUpdateUserScore).toHaveBeenCalledWith('user-999', 1);
@@ -273,7 +275,7 @@ describe('resolveGuess Lambda', () => {
       mockUpdateUserScore.mockResolvedValue(undefined);
       mockResolveGuess.mockResolvedValue(undefined);
 
-      await handler(event);
+      await handler(event, context);
 
       expect(mockUpdateUserScore).toHaveBeenCalledWith('user-111', 1);
       expect(mockResolveGuess).toHaveBeenCalledWith('user-111', expect.any(Number), 45000.01, true, 1);
@@ -296,7 +298,7 @@ describe('resolveGuess Lambda', () => {
       mockUpdateUserScore.mockResolvedValue(undefined);
       mockResolveGuess.mockResolvedValue(undefined);
 
-      await handler(event);
+      await handler(event, context);
 
       expect(mockUpdateUserScore).toHaveBeenCalledWith('user-222', 1);
       expect(mockResolveGuess).toHaveBeenCalledWith('user-222', expect.any(Number), 35000, true, 1);
@@ -321,7 +323,7 @@ describe('resolveGuess Lambda', () => {
       const mockSend = jest.fn().mockResolvedValue({});
       (SQSClient.prototype.send as jest.Mock) = mockSend;
 
-      await handler(event);
+      await handler(event, context);
 
       // Verify the message was requeued
       expect(mockSend).toHaveBeenCalledWith(expect.any(SendMessageCommand));
@@ -346,7 +348,7 @@ describe('resolveGuess Lambda', () => {
       mockFindDifferentPriceAfter.mockResolvedValue(46000);
       mockUpdateUserScore.mockRejectedValue(new Error('DynamoDB update failed'));
 
-      await expect(handler(event)).rejects.toThrow('DynamoDB update failed');
+      await expect(handler(event, context)).rejects.toThrow('DynamoDB update failed');
     });
 
     it('should propagate price fetch errors', async () => {
@@ -364,7 +366,7 @@ describe('resolveGuess Lambda', () => {
 
       mockFindDifferentPriceAfter.mockRejectedValue(new Error('Price query failed'));
 
-      await expect(handler(event)).rejects.toThrow('Price query failed');
+      await expect(handler(event, context)).rejects.toThrow('Price query failed');
     });
 
     it('should propagate SQS requeue errors', async () => {
@@ -384,7 +386,7 @@ describe('resolveGuess Lambda', () => {
       mockGetCurrentInstrumentPrice.mockResolvedValue(45000);
       (SQSClient.prototype.send as jest.Mock).mockRejectedValue(new Error('SQS send failed'));
 
-      await expect(handler(event)).rejects.toThrow('SQS send failed');
+      await expect(handler(event, context)).rejects.toThrow('SQS send failed');
     });
   });
 
@@ -406,7 +408,7 @@ describe('resolveGuess Lambda', () => {
       mockUpdateUserScore.mockResolvedValue(undefined);
       mockResolveGuess.mockResolvedValue(undefined);
 
-      await handler(event);
+      await handler(event, context);
 
       expect(mockUpdateUserScore).toHaveBeenCalledWith('user-correct', 1);
     });
@@ -428,7 +430,7 @@ describe('resolveGuess Lambda', () => {
       mockUpdateUserScore.mockResolvedValue(undefined);
       mockResolveGuess.mockResolvedValue(undefined);
 
-      await handler(event);
+      await handler(event, context);
 
       expect(mockUpdateUserScore).toHaveBeenCalledWith('user-wrong', -1);
     });

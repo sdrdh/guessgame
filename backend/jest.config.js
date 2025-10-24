@@ -6,6 +6,7 @@ module.exports = {
   transform: {
     '^.+\\.tsx?$': 'ts-jest'
   },
+  setupFiles: ['<rootDir>/test/setup.ts'],
   collectCoverageFrom: [
     'lambdas/**/*.ts',
     'lib/**/*.ts',

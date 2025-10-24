@@ -21,9 +21,12 @@
   "type": "commonjs",
   "dependencies": {
     "@aws-cdk/aws-appsync-alpha": "^2.59.0-alpha.0",
+    "@aws-lambda-powertools/logger": "^2.13.0",
+    "@aws-lambda-powertools/tracer": "^2.13.0",
     "@aws-sdk/client-dynamodb": "^3.914.0",
     "@aws-sdk/client-sqs": "^3.914.0",
     "@aws-sdk/lib-dynamodb": "^3.914.0",
+    "@middy/core": "^4.7.0",
     "aws-cdk-lib": "^2.220.0",
     "constructs": "^10.4.2"
   },

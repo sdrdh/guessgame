@@ -1,5 +1,6 @@
 import { handler } from '../../lambdas/getUser/index';
 import { AppSyncResolverEvent } from 'aws-lambda';
+import { createMockContext } from '../helpers';
 import * as db from '../../lambdas/shared/db';
 
 // Mock dependencies
@@ -10,6 +11,7 @@ process.env.TABLE_NAME = 'test-table';
 describe('getUser Lambda', () => {
   const mockGetUser = db.getUser as jest.MockedFunction<typeof db.getUser>;
   const mockGetActiveGuess = db.getActiveGuess as jest.MockedFunction<typeof db.getActiveGuess>;
+  const context = createMockContext();
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -22,10 +24,11 @@ describe('getUser Lambda', () => {
   it('should throw error if no user ID in token', async () => {
     const event = {
       arguments: {},
-      identity: null
+      identity: null,
+      info: { fieldName: 'getUser' }
     } as unknown as AppSyncResolverEvent<{}>;
 
-    await expect(handler(event)).rejects.toThrow('Unauthorized');
+    await expect(handler(event, context)).rejects.toThrow('Unauthorized');
   });
 
   it('should return null if user not found', async () => {
@@ -33,10 +36,11 @@ describe('getUser Lambda', () => {
 
     const event = {
       arguments: {},
-      identity: { claims: { sub: 'user-123' } }
+      identity: { claims: { sub: 'user-123' } },
+      info: { fieldName: 'getUser' }
     } as any;
 
-    const result = await handler(event);
+    const result = await handler(event, context);
     expect(result).toBeNull();
     expect(mockGetUser).toHaveBeenCalledWith('user-123');
   });
@@ -65,10 +69,11 @@ describe('getUser Lambda', () => {
 
     const event = {
       arguments: {},
-      identity: { claims: { sub: 'user-123' } }
+      identity: { claims: { sub: 'user-123' } },
+      info: { fieldName: 'getUser' }
     } as any;
 
-    const result = await handler(event);
+    const result = await handler(event, context);
 
     expect(result).toEqual({
       ...mockUser,
@@ -92,10 +97,11 @@ describe('getUser Lambda', () => {
 
     const event = {
       arguments: {},
-      identity: { claims: { sub: 'user-123' } }
+      identity: { claims: { sub: 'user-123' } },
+      info: { fieldName: 'getUser' }
     } as any;
 
-    const result = await handler(event);
+    const result = await handler(event, context);
 
     expect(result).toEqual({
       ...mockUser,

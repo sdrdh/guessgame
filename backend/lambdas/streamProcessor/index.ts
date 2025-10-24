@@ -1,6 +1,7 @@
 import { DynamoDBStreamEvent } from 'aws-lambda';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 import { AttributeValue } from '@aws-sdk/client-dynamodb';
+import { logger, tracer, wrapHandler } from '../shared/powertools';
 
 const APPSYNC_ENDPOINT = process.env.APPSYNC_ENDPOINT!;
 const APPSYNC_API_KEY = process.env.APPSYNC_API_KEY!;
@@ -47,14 +48,14 @@ interface Guess {
   resolvedAt?: number;
 }
 
-export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
-  console.log('streamProcessor event:', JSON.stringify(event, null, 2));
+const lambdaHandler = async (event: DynamoDBStreamEvent): Promise<void> => {
+  logger.info('Processing DynamoDB stream', { recordCount: event.Records.length });
 
   for (const record of event.Records) {
     try {
       const newImage = record.dynamodb?.NewImage;
       if (!newImage) {
-        console.log('No NewImage in record');
+        logger.debug('No NewImage in record, skipping');
         continue;
       }
 
@@ -70,7 +71,11 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
         await handlePriceUpdate(item);
       }
     } catch (error) {
-      console.error('Error processing stream record:', error);
+      logger.error('Error processing stream record', {
+        error,
+        eventName: record.eventName,
+        eventID: record.eventID
+      });
       // Don't throw - continue processing other records
     }
   }
@@ -79,12 +84,18 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
 async function handleGuessResolution(item: any): Promise<void> {
   // Extract userId from PK (format: USER#<userId>)
   const userId = item.PK.replace('USER#', '');
+  const guessId = item.guessId;
+
+  logger.appendKeys({ userId, guessId });
+  tracer.putAnnotation('userId', userId);
+  tracer.putAnnotation('guessId', guessId);
+  tracer.putAnnotation('streamEventType', 'guess_resolution');
 
   // Default to BTCUSD if instrument field is missing (for backwards compatibility with old records)
   const instrument = item.instrument || 'BTCUSD';
 
   if (!item.instrument) {
-    console.warn(`⚠️  Guess ${item.guessId} missing instrument field, defaulting to BTCUSD`);
+    logger.warn('Guess missing instrument field, defaulting to BTCUSD', { guessId });
   }
 
   const guess: Guess = {
@@ -101,7 +112,22 @@ async function handleGuessResolution(item: any): Promise<void> {
     resolvedAt: item.resolvedAt
   };
 
-  console.log(`Publishing guess resolution for user ${userId}:`, guess);
+  logger.info('Publishing guess resolution', {
+    userId,
+    guessId,
+    instrument,
+    correct: guess.correct,
+    scoreChange: guess.scoreChange
+  });
+
+  tracer.putMetadata('guessResolution', {
+    instrument,
+    direction: guess.direction,
+    correct: guess.correct,
+    scoreChange: guess.scoreChange,
+    startPrice: guess.startPrice,
+    endPrice: guess.endPrice
+  });
 
   const variables = {
     userId,
@@ -121,8 +147,8 @@ async function handleGuessResolution(item: any): Promise<void> {
   };
 
   const result = await callAppSync(UPDATE_GUESS_STATUS_MUTATION, variables);
-  console.log('Successfully published guess resolution to AppSync');
-  console.log('AppSync mutation result:', JSON.stringify(result, null, 2));
+  logger.info('Successfully published guess resolution to AppSync', { guessId });
+  logger.debug('AppSync mutation result', { result });
 }
 
 async function handlePriceUpdate(item: any): Promise<void> {
@@ -131,7 +157,17 @@ async function handlePriceUpdate(item: any): Promise<void> {
   const price = item.price;
   const timestamp = item.timestamp;
 
-  console.log(`Publishing price update: ${instrument} = $${price} at ${timestamp}`);
+  logger.appendKeys({ instrument });
+  tracer.putAnnotation('instrument', instrument);
+  tracer.putAnnotation('streamEventType', 'price_update');
+
+  logger.info('Publishing price update', { instrument, price, timestamp });
+
+  tracer.putMetadata('priceUpdate', {
+    instrument,
+    price,
+    timestamp
+  });
 
   const variables = {
     instrument,
@@ -140,13 +176,13 @@ async function handlePriceUpdate(item: any): Promise<void> {
   };
 
   await callAppSync(UPDATE_PRICE_MUTATION, variables);
-  console.log('Successfully published price update to AppSync');
+  logger.info('Successfully published price update to AppSync', { instrument, price });
 }
 
 async function callAppSync(query: string, variables: any): Promise<any> {
   const body = JSON.stringify({ query, variables });
 
-  console.log('Calling AppSync with:', body);
+  logger.debug('Calling AppSync', { endpoint: APPSYNC_ENDPOINT });
 
   const response = await fetch(APPSYNC_ENDPOINT, {
     method: 'POST',
@@ -159,15 +195,21 @@ async function callAppSync(query: string, variables: any): Promise<any> {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`AppSync error: ${response.status} ${response.statusText} - ${errorText}`);
+    const error = new Error(`AppSync error: ${response.status} ${response.statusText} - ${errorText}`);
+    logger.error('AppSync request failed', { error, status: response.status, statusText: response.statusText });
+    throw error;
   }
 
   const result: any = await response.json();
 
   if (result.errors) {
-    throw new Error(`AppSync GraphQL errors: ${JSON.stringify(result.errors)}`);
+    const error = new Error(`AppSync GraphQL errors: ${JSON.stringify(result.errors)}`);
+    logger.error('AppSync GraphQL errors', { error, errors: result.errors });
+    throw error;
   }
 
-  console.log('AppSync response:', JSON.stringify(result));
+  logger.debug('AppSync response received', { hasData: !!result.data });
   return result;
 }
+
+export const handler = wrapHandler(lambdaHandler);

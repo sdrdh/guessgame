@@ -240,16 +240,6 @@ T+65s: resolveGuess checks price, compares T+0s vs T+65s, might miss T+62s chang
 - Difficult to track individual guess lifecycle in CloudWatch Logs alone
 - Requeue events not easily correlated to original guess without manual log parsing
 
-**Current Workarounds:**
-- CloudWatch Logs with structured JSON logging (includes `guessId` in all logs)
-- CloudWatch Insights queries for tracking guess flow:
-  ```
-  fields @timestamp, @message
-  | filter guessId = "abc-123"
-  | sort @timestamp asc
-  ```
-- Manual correlation via `guessId` in SQS message body
-
 **Impact:**
 - Debugging requeue loops requires manual log analysis
 - No visual service map to understand request flow

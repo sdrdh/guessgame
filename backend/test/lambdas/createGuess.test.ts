@@ -1,5 +1,6 @@
 import { handler } from '../../lambdas/createGuess/index';
 import { AppSyncResolverEvent } from 'aws-lambda';
+import { createMockContext } from '../helpers';
 import * as db from '../../lambdas/shared/db';
 import * as instrumentPrice from '../../lambdas/shared/instrumentPrice';
 import { SQSClient } from '@aws-sdk/client-sqs';
@@ -18,19 +19,19 @@ describe('createGuess Lambda', () => {
   const mockGetActiveGuess = db.getActiveGuess as jest.MockedFunction<typeof db.getActiveGuess>;
   const mockCreateGuess = db.createGuess as jest.MockedFunction<typeof db.createGuess>;
   const mockGetCurrentInstrumentPrice = instrumentPrice.getCurrentInstrumentPrice as jest.MockedFunction<typeof instrumentPrice.getCurrentInstrumentPrice>;
+  const context = createMockContext();
 
   beforeEach(() => {
     jest.clearAllMocks();
     (SQSClient as jest.MockedClass<typeof SQSClient>).mockClear();
   });
 
-  // ... rest of comprehensive tests from previous version, but simplified SQS tests ...
-
   describe('SQS Queue', () => {
     it('should send message to SQS queue', async () => {
       const event = {
         arguments: { direction: 'up' as const },
-        identity: { claims: { sub: 'user-123', email: 'test@example.com' } }
+        identity: { claims: { sub: 'user-123', email: 'test@example.com' } },
+        info: { fieldName: 'createGuess' }
       } as any;
 
       mockGetUser.mockResolvedValue({
@@ -45,7 +46,7 @@ describe('createGuess Lambda', () => {
       mockCreateGuess.mockResolvedValue(undefined);
 
       // Since SQSClient is mocked at module level, we just need to verify the handler runs successfully
-      const result = await handler(event);
+      const result = await handler(event, context);
 
       // Verify that a guess was created with the correct structure
       expect(result).toHaveProperty('guessId');
@@ -61,18 +62,20 @@ describe('createGuess Lambda', () => {
     it('should propagate DynamoDB errors', async () => {
       const event = {
         arguments: { direction: 'up' as const },
-        identity: { claims: { sub: 'user-123', email: 'test@example.com' } }
+        identity: { claims: { sub: 'user-123', email: 'test@example.com' } },
+        info: { fieldName: 'createGuess' }
       } as any;
 
       mockGetUser.mockRejectedValue(new Error('DynamoDB connection failed'));
 
-      await expect(handler(event)).rejects.toThrow('DynamoDB connection failed');
+      await expect(handler(event, context)).rejects.toThrow('DynamoDB connection failed');
     });
 
     it('should propagate price fetch errors', async () => {
       const event = {
         arguments: { direction: 'up' as const },
-        identity: { claims: { sub: 'user-123', email: 'test@example.com' } }
+        identity: { claims: { sub: 'user-123', email: 'test@example.com' } },
+        info: { fieldName: 'createGuess' }
       } as any;
 
       mockGetUser.mockResolvedValue({
@@ -85,7 +88,31 @@ describe('createGuess Lambda', () => {
       mockGetActiveGuess.mockResolvedValue(null);
       mockGetCurrentInstrumentPrice.mockRejectedValue(new Error('CoinGecko API error'));
 
-      await expect(handler(event)).rejects.toThrow('CoinGecko API error');
+      await expect(handler(event, context)).rejects.toThrow('CoinGecko API error');
+    });
+  });
+
+  describe('Authorization', () => {
+    it('should throw error when userId is missing', async () => {
+      const event = {
+        arguments: { direction: 'up' as const },
+        identity: { claims: {} },
+        info: { fieldName: 'createGuess' }
+      } as any;
+
+      await expect(handler(event, context)).rejects.toThrow('Unauthorized: No user ID in token');
+    });
+  });
+
+  describe('Input Validation', () => {
+    it('should reject invalid direction', async () => {
+      const event = {
+        arguments: { direction: 'sideways' as any },
+        identity: { claims: { sub: 'user-123' } },
+        info: { fieldName: 'createGuess' }
+      } as any;
+
+      await expect(handler(event, context)).rejects.toThrow('Invalid direction');
     });
   });
 });

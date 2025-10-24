@@ -5,11 +5,14 @@ process.env.APPSYNC_API_KEY = 'test-api-key';
 
 import { handler } from '../../lambdas/streamProcessor/index';
 import { DynamoDBStreamEvent } from 'aws-lambda';
+import { createMockContext } from '../helpers';
 
 // Mock fetch
 global.fetch = jest.fn() as jest.MockedFunction<typeof fetch>;
 
 describe('streamProcessor Lambda', () => {
+  const context = createMockContext();
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -66,7 +69,7 @@ describe('streamProcessor Lambda', () => {
       json: async () => ({ data: { updateGuessStatus: {} } })
     });
 
-    await handler(event);
+    await handler(event, context);
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
     const callArgs = (global.fetch as jest.Mock).mock.calls[0];
@@ -98,7 +101,7 @@ describe('streamProcessor Lambda', () => {
       ]
     };
 
-    await handler(event);
+    await handler(event, context);
 
     expect(global.fetch).not.toHaveBeenCalled();
   });

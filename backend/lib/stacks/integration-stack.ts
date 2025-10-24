@@ -29,11 +29,16 @@ export class IntegrationStack extends cdk.Stack {
       handler: 'handler',
       timeout: cdk.Duration.seconds(30),
       memorySize: 256,
+      tracing: lambda.Tracing.ACTIVE, // Enable X-Ray tracing
       environment: {
         TABLE_NAME: table.tableName,
         APPSYNC_ENDPOINT: api.graphqlUrl,
         APPSYNC_API_KEY: apiKey,
-        NODE_OPTIONS: '--enable-source-maps'
+        NODE_OPTIONS: '--enable-source-maps',
+        POWERTOOLS_SERVICE_NAME: 'guess-game-service',
+        POWERTOOLS_LOG_LEVEL: 'INFO',
+        POWERTOOLS_TRACER_CAPTURE_RESPONSE: 'true',
+        POWERTOOLS_TRACER_CAPTURE_ERROR: 'true'
       },
       bundling: {
         minify: true,

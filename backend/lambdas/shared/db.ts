@@ -6,8 +6,9 @@ import {
   UpdateCommand,
   QueryCommand
 } from '@aws-sdk/lib-dynamodb';
+import { tracer } from './powertools';
 
-const client = new DynamoDBClient({});
+const client = tracer.captureAWSv3Client(new DynamoDBClient({}));
 const docClient = DynamoDBDocumentClient.from(client);
 const TABLE_NAME = process.env.TABLE_NAME!;
 

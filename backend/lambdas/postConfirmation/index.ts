@@ -1,5 +1,6 @@
 import { PostConfirmationTriggerEvent, PostConfirmationTriggerHandler } from 'aws-lambda';
 import { createUser } from '../shared/db';
+import { logger, tracer, wrapHandler } from '../shared/powertools';
 
 /**
  * Cognito Post-Confirmation Trigger
@@ -10,10 +11,13 @@ import { createUser } from '../shared/db';
  * Trigger flow:
  * User signs up → Confirms email → This Lambda → User profile created in DynamoDB
  */
-export const handler: PostConfirmationTriggerHandler = async (
+const lambdaHandler = async (
   event: PostConfirmationTriggerEvent
 ): Promise<PostConfirmationTriggerEvent> => {
-  console.log('🎯 Post-confirmation trigger event:', JSON.stringify(event, null, 2));
+  logger.info('Post-confirmation trigger invoked', {
+    userPoolId: event.userPoolId,
+    triggerSource: event.triggerSource
+  });
 
   const { userPoolId, userName } = event;
   const { email } = event.request.userAttributes;
@@ -21,23 +25,40 @@ export const handler: PostConfirmationTriggerHandler = async (
   // userName is the user's sub (UUID)
   const userId = userName;
 
+  logger.appendKeys({ userId });
+  tracer.putAnnotation('userId', userId);
+  tracer.putAnnotation('userPoolId', userPoolId);
+
   if (!email) {
-    console.error('❌ No email found in user attributes');
+    logger.error('No email found in user attributes', { userId });
     // Don't throw error - this would prevent user confirmation
     // Just log and return event
     return event;
   }
 
   try {
-    console.log(`✅ Creating user profile for: ${userId} (${email})`);
+    logger.info('Creating user profile', { userId });
     await createUser(userId, email);
-    console.log(`✅ User profile created successfully in DynamoDB`);
+    logger.info('User profile created successfully', { userId });
+
+    tracer.putMetadata('userCreation', {
+      userId,
+      success: true
+    });
   } catch (error) {
-    console.error('❌ Error creating user profile:', error);
+    logger.error('Error creating user profile', error as Error, { userId });
     // Don't throw error - this would prevent user confirmation
     // The user can still be created later if needed
+
+    tracer.putMetadata('userCreation', {
+      userId,
+      success: false,
+      error: (error as Error).message
+    });
   }
 
   // IMPORTANT: Always return the event object
   return event;
 };
+
+export const handler = wrapHandler(lambdaHandler) as PostConfirmationTriggerHandler;

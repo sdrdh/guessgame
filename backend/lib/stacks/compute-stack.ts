@@ -27,7 +27,11 @@ export class ComputeStack extends cdk.Stack {
     // Common Lambda environment variables
     const commonEnv = {
       TABLE_NAME: table.tableName,
-      NODE_OPTIONS: '--enable-source-maps'
+      NODE_OPTIONS: '--enable-source-maps',
+      POWERTOOLS_SERVICE_NAME: 'guess-game-service',
+      POWERTOOLS_LOG_LEVEL: 'INFO',
+      POWERTOOLS_TRACER_CAPTURE_RESPONSE: 'true',
+      POWERTOOLS_TRACER_CAPTURE_ERROR: 'true'
     };
 
     // Common Lambda props
@@ -35,6 +39,7 @@ export class ComputeStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       timeout: cdk.Duration.seconds(30),
       memorySize: 256,
+      tracing: lambda.Tracing.ACTIVE, // Enable X-Ray tracing
       bundling: {
         minify: true,
         sourceMap: true,
