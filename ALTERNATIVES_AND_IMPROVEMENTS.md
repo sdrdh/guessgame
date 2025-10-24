@@ -30,7 +30,7 @@ This document outlines the architectural decisions made for the Bitcoin price gu
 - Custom trace IDs can be embedded in message attributes for end-to-end tracking
 - CloudWatch metrics provide basic queue depth and processing metrics
 
-**Implementation:** See [DEVELOPMENT.md#sqs-retry-pattern](./DEVELOPMENT.md#2-resolveguess) for the requeue pattern.
+**Implementation:** See [DEVELOPMENT.md#sqs-retry-pattern](./backend/DEVELOPMENT.md#2-resolveguess) for the requeue pattern.
 
 ---
 
@@ -47,7 +47,7 @@ This document outlines the architectural decisions made for the Bitcoin price gu
 - Less flexibility than API Gateway for custom request/response transformations
 - Vendor lock-in to AWS AppSync-specific features
 
-**Implementation:** See [schema/schema.graphql](./schema/schema.graphql) for the full GraphQL schema.
+**Implementation:** See [schema/schema.graphql](./backend/schema/schema.graphql) for the full GraphQL schema.
 
 ---
 
@@ -187,7 +187,7 @@ Lambda (createGuess, resolveGuess):
 - **Operational overhead**: Container monitoring, auto-restart on connection failures
 - **Overkill for current scale**: 60-second guess resolution doesn't require sub-second price updates
 
-**Decision:** Not worth the cost and complexity for current use case. Current 5-second price cache ([instrumentPrice.ts](./lambdas/shared/instrumentPrice.ts)) is sufficient for 60-second guess windows.
+**Decision:** Not worth the cost and complexity for current use case. Current 5-second price cache ([instrumentPrice.ts](./backend/lambdas/shared/instrumentPrice.ts)) is sufficient for 60-second guess windows.
 
 **Revisit If:**
 - Guess resolution time drops to <10 seconds
@@ -222,14 +222,14 @@ T+65s: resolveGuess checks price, compares T+0s vs T+65s, might miss T+62s chang
 **Current Mitigations:**
 - Frontend polls CoinGecko every 15 seconds (provides price continuity)
 - AppSync subscription pushes price updates to frontend (`onPriceUpdated`)
-- 5-second cache TTL in [instrumentPrice.ts](./lambdas/shared/instrumentPrice.ts) encourages frequent price refreshes
+- 5-second cache TTL in [instrumentPrice.ts](./backend/lambdas/shared/instrumentPrice.ts) encourages frequent price refreshes
 - `resolveGuess` requeues with 5-second delay (12 retries per minute = high chance of hitting cache)
 
 **Future Fix:**
 - Implement "fetch last known price within 5-second window" in `resolveGuess` (query DynamoDB range)
 - Or deploy Fargate price fetcher (Improvement 5a) to eliminate gaps entirely
 
-**Code Location:** See [resolveGuess/index.ts](./lambdas/resolveGuess/index.ts) for retry logic.
+**Code Location:** See [resolveGuess/index.ts](./backend/lambdas/resolveGuess/index.ts) for retry logic.
 
 ---
 
@@ -326,7 +326,7 @@ fargateTask.addContainer('PriceFetcher', {
 
 **Current State:**
 - GraphQL schema already supports `instrument: String!` field in `Guess` type
-- [createGuess/index.ts:63](./lambdas/createGuess/index.ts#L63) hardcodes `instrument = 'BTCUSD'`
+- [createGuess/index.ts:63](./backend/lambdas/createGuess/index.ts#L63) hardcodes `instrument = 'BTCUSD'`
 - DynamoDB single-table design supports `INSTRUMENT#<instrument>` partition key
 
 **Implementation (Minimal Changes Required):**
@@ -526,10 +526,10 @@ test('subscription receives guess updates', async () => {
 
 ## Related Documentation
 
-- [DEVELOPMENT.md](./DEVELOPMENT.md) - Backend development guide
-- [frontend/DEVELOPMENT.md](../frontend/DEVELOPMENT.md) - Frontend development guide
-- [CLAUDE.md](../CLAUDE.md) - Quick reference for AI-assisted development
-- [README.md](../README.md) - Project overview and deployment
+- [DEVELOPMENT.md](./backend/DEVELOPMENT.md) - Backend development guide
+- [frontend/DEVELOPMENT.md](./frontend/DEVELOPMENT.md) - Frontend development guide
+- [CLAUDE.md](./CLAUDE.md) - Quick reference for AI-assisted development
+- [README.md](./README.md) - Project overview and deployment
 
 ---
 
@@ -547,4 +547,4 @@ The current architecture (AppSync + SQS + Lambda + DynamoDB) strikes a good bala
 2. **Add frontend component tests** (5d) to prevent regressions
 3. Monitor traffic and revisit Fargate price fetcher (5a) if resolution time becomes critical
 
-For questions or proposed changes, see [DEVELOPMENT.md#troubleshooting](./DEVELOPMENT.md#troubleshooting).
+For questions or proposed changes, see [DEVELOPMENT.md#troubleshooting](./backend/DEVELOPMENT.md#troubleshooting).

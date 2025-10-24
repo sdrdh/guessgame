@@ -2,9 +2,12 @@
 
 A real-time Bitcoin price guessing game built with SvelteKit and AWS serverless architecture.
 
+**Live Demo:** [https://guessgame.sdrdhlab.xyz](https://guessgame.sdrdhlab.xyz)
+
 ## Documentation
 
 - **[CLAUDE.md](CLAUDE.md)** - Quick reference for Claude Code (architecture overview, key patterns, workflows)
+- **[ALTERNATIVES_AND_IMPROVEMENTS.md](ALTERNATIVES_AND_IMPROVEMENTS.md)** - Architecture alternatives considered and future improvements
 - **[backend/DEVELOPMENT.md](backend/DEVELOPMENT.md)** - Complete backend development guide (CDK, Lambda, DynamoDB, GraphQL)
 - **[frontend/DEVELOPMENT.md](frontend/DEVELOPMENT.md)** - Complete frontend development guide (Svelte 5, state management, GraphQL)
 
@@ -100,9 +103,7 @@ After deploying, set up your custom domain with CloudFlare DNS:
 
 3. **Test**: Visit `https://yourdomain.com` - should load with HTTPS
 
-**Benefits**: Free SSL certificate, CDN caching, DDoS protection, and WAF
-
-**Cost**: ~$0.50/month (S3 only, CloudFlare is free)
+**Why CloudFlare?** Domain already managed in CloudFlare. Using S3 + CloudFlare is simpler than S3 + CloudFront + CloudFlare (avoids SSL certificate complexity between CloudFront and CloudFlare).
 
 ### Manual Frontend Development
 
