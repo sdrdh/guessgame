@@ -11,7 +11,7 @@
 </script>
 
 <nav class="flex justify-between items-center mb-6 pb-4 border-b">
-	<h1 class="text-3xl font-bold">Bitcoin Guessing Game</h1>
+	<h1 class="text-3xl font-bold">Guess Game</h1>
 	<div class="flex items-center gap-4">
 		{#if gameStore.user?.email}
 			<span class="text-sm text-muted-foreground hidden sm:inline">
